@@ -2164,7 +2164,8 @@ Queue = FIFO · Stack = LIFO`;
       ? `${KIND_LABEL[f.kind]} · ${fmtSize(f.size)} · shown as uploaded, no questions made from it`
       : 'Open any file (PDF, image, document, text) to view it exactly as it is, without turning it into questions.';
     const dl = $('origDownload');
-    dl.classList.toggle('hidden', !f);
+    // Embedded pages (e.g. a claude.ai artifact) can't start downloads, so the link only shows on the real site
+    dl.classList.toggle('hidden', !f || inFrame);
     if (f) { dl.href = f.url; dl.setAttribute('download', f.name); }
     $('origBuild').classList.toggle('hidden', !f || !['txt', 'csv', 'json', 'pdf'].includes(f.name.split('.').pop().toLowerCase()));
     $('origOpen').textContent = f ? 'Open a different file as-is' : 'Open a file as-is';
