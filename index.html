@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Lockdown Practice Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<!-- PDF.js (text extraction) and PapaParse (CSV parsing) via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  /* Layout: an exam answer sheet. Hairline-ruled sections on a plain sheet, drop-out-ink
+     form structure, graphite for anything you "fill in" (bubbles, primary actions). */
+  :root {
+    --bg: #eceef1;          /* desk under the sheet */
+    --surface: #ffffff;     /* the sheet */
+    --surface-2: #f4f5f7;
+    --border: #d3d8de;
+    --text: #1e2228;        /* graphite */
+    --muted: #5a616c;
+    --ink: #c62828;         /* OMR drop-out ink: form lines, bubble outlines, labels */
+    --ink-soft: #fbe6e6;
+    --primary: #252a31;     /* pencil fill */
+    --primary-ink: #ffffff;
+    --good: #19744a;
+    --good-soft: #e2f3ea;
+    --bad: #a8231c;
+    --bad-soft: #f8e3e1;
+    --warn: #8f5500;
+    --warn-soft: #fbf0dc;
+    --font-body: "Roboto", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    --radius: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #111316; --surface: #191c20; --surface-2: #21252b; --border: #333941;
+      --text: #e5e7ea; --muted: #9aa1aa; --ink: #f06b6b; --ink-soft: #3a1b1d;
+      --primary: #e5e7ea; --primary-ink: #111316;
+      --good: #5cc28f; --good-soft: #16301f; --bad: #ff7b71; --bad-soft: #3d1918;
+      --warn: #eaa74c; --warn-soft: #362812;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #111316; --surface: #191c20; --surface-2: #21252b; --border: #333941;
+    --text: #e5e7ea; --muted: #9aa1aa; --ink: #f06b6b; --ink-soft: #3a1b1d;
+    --primary: #e5e7ea; --primary-ink: #111316;
+    --good: #5cc28f; --good-soft: #16301f; --bad: #ff7b71; --bad-soft: #3d1918;
+    --warn: #eaa74c; --warn-soft: #362812;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 var(--font-body);
+    min-height: 100vh;
+  }
+  .hidden { display: none !important; }
+  .wrap {
+    max-width: 880px; margin: 0 auto; min-width: 0;
+    padding-block: 28px 80px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; font-weight: 700; letter-spacing: -.015em; text-wrap: balance; }
+  h2 { font-size: 17px; margin: 0 0 14px; font-weight: 650; text-wrap: balance; }
+  h2 .part, .eyebrow {
+    font: 500 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ink); display: block; margin-bottom: 6px;
+  }
+  .sub { color: var(--muted); margin: 0 0 24px; max-width: 62ch; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--ink);
+    border-radius: 2px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .spacer { flex: 1; }
+  button {
+    font: inherit; font-weight: 600; font-size: 14px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    border-radius: var(--radius); padding: 8px 14px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  button:hover { border-color: var(--text); }
+  button.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+  button.primary:hover { opacity: .9; }
+  button.danger { color: var(--bad); }
+  button.danger:hover { border-color: var(--bad); }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.big { padding: 12px 20px; font-size: 15px; }
+  button svg { width: 16px; height: 16px; flex: none; }
+  input[type=text], input[type=number], textarea, select {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 8px 10px; width: 100%;
+  }
+  input[type=number] { font-family: var(--font-mono); }
+  textarea { resize: vertical; }
+  #rawText { font: 13px/1.5 var(--font-mono); }
+  input:focus, textarea:focus, select:focus, button:focus-visible, .drop:focus-visible {
+    outline: 2px solid var(--ink); outline-offset: 1px;
+  }
+  input[type=radio], input[type=checkbox] { accent-color: var(--primary); }
+  label.inline { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field > span { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+  /* Drop zone */
+  .drop {
+    border: 1.5px dashed var(--ink); border-radius: var(--radius);
+    padding: 26px 16px; text-align: center; cursor: pointer;
+    background: var(--surface); transition: background .15s;
+  }
+  .drop:hover, .drop.over { background: var(--ink-soft); }
+  .drop strong { display: block; font-size: 15px; margin-bottom: 4px; }
+  .drop small { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+  .status { font-size: 14px; margin-top: 10px; min-height: 1.5em; color: var(--muted); }
+  .status.err { color: var(--bad); }
+  .status.ok { color: var(--good); }
+  details summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  pre.fmt {
+    background: var(--surface-2); border-radius: var(--radius); padding: 12px;
+    font: 12.5px/1.55 var(--font-mono); overflow-x: auto; white-space: pre; margin: 8px 0 0; max-width: 100%;
+  }
+
+  /* Editor */
+  .q-edit { border-top: 1px solid var(--border); padding: 16px 0 18px; }
+  .q-edit:first-child { border-top: 0; padding-top: 4px; }
+  .q-edit.missing .num { color: var(--warn); }
+  .q-edit .head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .q-edit .num { font: 600 13px var(--font-mono); color: var(--ink); }
+  .badge { font: 600 11.5px/1 var(--font-body); padding: 4px 8px; border-radius: 3px; letter-spacing: .01em; }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.good { background: var(--good-soft); color: var(--good); }
+  .badge.bad { background: var(--bad-soft); color: var(--bad); }
+  .badge.muted { background: var(--surface-2); color: var(--muted); }
+  .choice-edit { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 8px; align-items: center; margin-top: 6px; }
+  .choice-edit .letter, .opt .l {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid var(--ink); color: var(--ink);
+    display: inline-flex; align-items: center; justify-content: center;
+    font: 600 11px/1 var(--font-mono); flex: none;
+  }
+  .choice-edit.is-correct .letter { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .choice-edit input[type=radio] { width: 17px; height: 17px; }
+  .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; align-items: end; }
+  .empty { color: var(--muted); padding: 18px 0; }
+
+  /* Test screen */
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--surface); }
+  .test-header {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50;
+    background: var(--surface); border-bottom: 2px solid var(--ink);
+  }
+  .test-header .inner {
+    max-width: 880px; margin: 0 auto; padding-block: 10px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  .timer { font: 600 24px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  .timer.warn { color: var(--warn); }
+  .timer.low { color: var(--bad); animation: pulse 1s infinite; }
+  .time-warn { background: var(--warn-soft); color: var(--warn); border-top: 1px solid var(--border); }
+  .time-warn .inner { padding-block: 8px; gap: 12px; }
+  .time-warn strong { font: 600 14px var(--font-mono); letter-spacing: .04em; }
+  .time-warn button { color: var(--warn); border-color: currentColor; background: transparent; }
+  .time-warn:not([hidden]) { animation: slideDown .25s ease-out; }
+  @keyframes slideDown { from { transform: translateY(-6px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .time-warn:not([hidden]) { animation: none; } }
+  @keyframes pulse { 50% { opacity: .55; } }
+  @media (prefers-reduced-motion: reduce) { .timer.low { animation: none; } }
+  .stat { font-size: 13px; color: var(--muted); }
+  .stat b { color: var(--text); font: 600 15px var(--font-mono); font-variant-numeric: tabular-nums; }
+  .viol b { color: var(--bad); }
+  .lock-pill {
+    font: 600 11px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink); border: 1.5px solid var(--ink); padding: 5px 8px; border-radius: 3px;
+  }
+  .q-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 20px 22px; margin-bottom: 12px; }
+  .q-card .qtext { font-weight: 600; margin-bottom: 12px; white-space: pre-wrap; display: flex; gap: 10px; }
+  .q-card .qtext .n { font: 600 14px/1.55 var(--font-mono); color: var(--ink); flex: none; min-width: 2ch; }
+  .opt {
+    position: relative;
+    display: flex; gap: 12px; align-items: center;
+    padding: 8px 10px; border-radius: var(--radius);
+    margin-top: 4px; cursor: pointer;
+  }
+  .opt:hover { background: var(--surface-2); }
+  .opt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .opt input:focus-visible + .l { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .opt.sel .l { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .opt.sel { font-weight: 600; }
+
+  body.locked, body.locked * { -webkit-user-select: none !important; user-select: none !important; -webkit-touch-callout: none; }
+
+  /* Blocker & modals. The blocker is deliberately dark in both themes. */
+  .overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  }
+  .overlay.blocker { background: #0d0f12; color: #eceef1; }
+  .overlay.modal-bg { background: rgba(0,0,0,.55); }
+  .blocker-box { max-width: 500px; text-align: center; }
+  .stamp {
+    display: inline-block; font: 700 13px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase;
+    color: #ff6b6b; border: 2px solid #ff6b6b; padding: 8px 12px; border-radius: 3px;
+    transform: rotate(-3deg); margin-bottom: 18px;
+  }
+  .blocker-box h2 { font-size: 24px; margin-bottom: 10px; color: #ffffff; }
+  .blocker-box p { color: #a9b0ba; margin: 6px 0; }
+  .blocker-box .reason { color: #ff6b6b; font: 600 14px var(--font-mono); }
+  .blocker-box .count { font-size: 14px; margin-top: 14px; }
+  .blocker-box button { margin-top: 22px; }
+  .blocker-box .fs-btn { background: #eceef1; border-color: #eceef1; color: #0d0f12; }
+  .blocker-box .fs-btn:hover { border-color: #ffffff; background: #ffffff; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 22px; max-width: 440px; width: 100%; border: 1px solid var(--border); border-top: 2px solid var(--ink); }
+  .modal p { color: var(--muted); }
+
+  /* Results */
+  .score-hero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--border); }
+  .metric { padding: 14px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-width: 0; }
+  .metric:nth-child(3n) { border-right: 0; }
+  .metric:nth-last-child(-n+3) { border-bottom: 0; }
+  .metric .v { font: 600 26px/1.15 var(--font-mono); font-variant-numeric: tabular-nums; }
+  .metric .k { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .metric.main .v { font-size: 34px; }
+  .bar { height: 8px; background: var(--surface-2); overflow: hidden; margin-top: 16px; border-radius: 2px; }
+  .bar > div { height: 100%; background: var(--good); }
+  .review { border-top: 1px solid var(--border); padding: 16px 0; }
+  .review:first-child { border-top: 0; padding-top: 4px; }
+  .review .row b { font: 600 13px var(--font-mono); color: var(--ink); }
+  .review .qtext { font-weight: 600; margin: 8px 0 10px; white-space: pre-wrap; }
+  .review ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+  .review li { padding: 5px 8px; border-radius: 3px; font-size: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .review li b { font-family: var(--font-mono); font-weight: 600; color: var(--muted); }
+  .review li.is-correct { background: var(--good-soft); color: var(--good); font-weight: 600; }
+  .review li.is-correct b { color: var(--good); }
+  .review li.is-wrong-pick { background: var(--bad-soft); color: var(--bad); font-weight: 600; }
+  .review li.is-wrong-pick b { color: var(--bad); }
+  .review li .tag { margin-left: auto; font-size: 12px; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td:nth-child(-n+3) { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-row button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .note { font-size: 13px; color: var(--muted); }
+
+  /* Detected introduction */
+  .intro-box { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; background: var(--surface-2); }
+  .intro-box summary { font-weight: 600; font-size: 14px; color: var(--text); }
+  .intro-box textarea { margin-top: 10px; font-size: 14px; }
+  .intro-card summary { cursor: pointer; font: 600 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); }
+  .intro-text { white-space: pre-wrap; margin-top: 10px; color: var(--muted); }
+
+  /* Answer key */
+  [hidden] { display: none !important; }
+  #keyText { font: 13px/1.5 var(--font-mono); }
+  #keyText.masked { -webkit-text-security: disc; text-security: disc; }
+  .hidden-note { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+
+  /* Reference materials */
+  .drop.compact { padding: 18px 16px; }
+  .mat-list { list-style: none; padding: 0; margin: 12px 0 0; display: grid; }
+  .mat-item { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+  .mat-item:first-child { border-top: 0; }
+  .mat-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--border); border-radius: 3px; background: var(--surface-2); }
+  .mat-thumb.txt { display: flex; align-items: center; justify-content: center; font: 600 15px var(--font-mono); color: var(--ink); }
+  .mat-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .mat-note { display: grid; gap: 8px; margin-top: 10px; }
+  .mat-count { font: 600 12px/1 var(--font-mono); background: var(--ink-soft); color: var(--ink); padding: 3px 6px; border-radius: 3px; }
+  .mat-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 900;
+    width: min(480px, 100%); background: var(--surface); border-left: 2px solid var(--ink);
+    display: flex; flex-direction: column; box-shadow: -8px 0 24px rgba(0,0,0,.14);
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px);
+  }
+  .mat-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); flex: none; }
+  .mat-zoom { font: 600 12px var(--font-mono); min-width: 4.5ch; text-align: center; color: var(--muted); }
+  .mat-tabs { display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto; border-bottom: 1px solid var(--border); flex: none; }
+  .mat-tabs button { white-space: nowrap; }
+  .mat-tabs button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .mat-body { flex: 1; min-height: 0; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .mat-body img { max-width: none; height: auto; border: 1px solid var(--border); background: #ffffff; flex: none; }
+  .mat-text { white-space: pre-wrap; line-height: 1.55; width: 100%; }
+
+  @media (max-width: 560px) {
+    .test-header .inner { gap: 10px 14px; }
+    .timer { font-size: 19px; }
+    .card { padding: 16px; }
+    .q-card { padding: 16px; }
+    .score-hero { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric:nth-child(3n) { border-right: 1px solid var(--border); }
+    .metric:nth-child(2n) { border-right: 0; }
+    .metric:nth-last-child(-n+3) { border-bottom: 1px solid var(--border); }
+    .metric:nth-last-child(-n+2) { border-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== SETUP SCREEN ===================== -->
+<section id="setup" class="wrap">
+  <span class="eyebrow">Practice exam</span>
+  <h1>Lockdown Practice Test</h1>
+  <p class="sub">Upload or paste a practice test, check the parsed questions, then start a timed session in lockdown mode.</p>
+
+  <div class="card">
+    <h2><span class="part">Part 1</span>Load questions</h2>
+    <div id="drop" class="drop" tabindex="0" role="button" aria-label="Upload a test file">
+      <strong>Drop a file here or click to browse</strong>
+      <small>Supports .txt, .csv, .json, .pdf</small>
+      <input id="fileInput" type="file" accept=".txt,.csv,.json,.pdf,text/plain,text/csv,application/json,application/pdf" hidden>
+    </div>
+    <div id="fileStatus" class="status"></div>
+
+    <div class="field" style="margin-top:16px">
+      <span>…or paste raw text / CSV / JSON</span>
+      <textarea id="rawText" rows="9" placeholder="1. What is the capital of France?&#10;A) Berlin&#10;B) Paris&#10;C) Rome&#10;D) Madrid&#10;Answer: B"></textarea>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="parseBtn" class="primary">Parse questions</button>
+      <button id="sampleBtn">Load sample test</button>
+      <button id="clearBtn" class="danger">Clear</button>
+      <span class="spacer"></span>
+    </div>
+    <details style="margin-top:14px">
+      <summary>Supported formats</summary>
+<pre class="fmt">AUTOMATIC CLEAN-UP
+Cover/intro pages and "Directions" are set aside and shown above
+the questions. Page numbers, running headers/footers, "Go on to the
+next page", Name/Date lines and section headings are removed.
+A trailing "Answer Key" section becomes the hidden answer key.
+
+TEXT / PDF
+1. Question text
+A) Choice      (also A. / (A) / a) )
+B) Choice
+*C) Choice     (a leading * marks the correct answer)
+Answer: C      (also "Ans:", "Correct Answer:", or the answer text)
+
+CSV (header row)
+question,A,B,C,D,answer
+"What is 2+2?",3,4,5,6,B
+(or a "choices" column separated by |)
+
+JSON
+[{"question":"...","choices":["..","..",".."],"answer":"B"}]
+(answer can be a letter, 0-based index, or the choice text)</pre>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:6px">
+      <h2 style="margin:0"><span class="part">Part 2</span>Answer key</h2>
+      <span id="keyBadge" class="badge muted">Optional</span>
+    </div>
+    <p class="note" style="margin:0 0 12px">If your question file includes answers, they're detected and moved here automatically. Have them in a separate file? Add it here instead. The key stays hidden: the preview won't show correct answers, and they're only revealed on the results screen after you submit.</p>
+    <div id="keyDrop" class="drop compact" tabindex="0" role="button" aria-label="Upload an answer key">
+      <strong>Drop an answer key file or click to browse</strong>
+      <small>.txt, .csv, .json, .pdf · the contents are never displayed</small>
+      <input id="keyInput" type="file" accept=".txt,.csv,.json,.pdf,text/plain,text/csv,application/json,application/pdf" hidden>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <span>…or type / paste it (masked as you type)</span>
+      <textarea id="keyText" class="masked" rows="3" autocomplete="off" spellcheck="false" placeholder="1. B  2. C  3. B …   or   BCBCBABB"></textarea>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="keyApply" class="small primary">Apply key</button>
+      <button id="keyRemove" class="small danger" disabled>Remove key</button>
+      <label class="inline note"><input id="keyShow" type="checkbox"> Show text while typing</label>
+    </div>
+    <div id="keyStatus" class="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0"><span class="part">Part 3</span>Review &amp; edit questions</h2>
+      <span id="qCount" class="badge muted">0 questions</span>
+      <span class="spacer"></span>
+      <label class="inline note"><input id="hideAnswers" type="checkbox"> Hide correct answers</label>
+      <button id="addQBtn" class="small">+ Add question</button>
+    </div>
+    <div id="editor"><div class="empty">No questions yet. Upload a file, paste text, or load the sample test.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:6px">
+      <h2 style="margin:0"><span class="part">Part 4</span>Reference materials</h2>
+      <span id="matCount" class="badge muted">None</span>
+    </div>
+    <p class="note" style="margin:0 0 12px">Formula sheets, constants, tables or notes you're allowed to use. They open in a side panel during the test without breaking lockdown.</p>
+    <div id="matDrop" class="drop compact" tabindex="0" role="button" aria-label="Upload reference materials">
+      <strong>Drop files here or click to browse</strong>
+      <small>Images (.png .jpg .gif .webp .svg), .pdf, .txt, .md · several at once</small>
+      <input id="matInput" type="file" multiple accept="image/*,.pdf,.txt,.md,application/pdf,text/plain,text/markdown" hidden>
+    </div>
+    <div id="matStatus" class="status"></div>
+    <details style="margin-top:6px">
+      <summary>Type or paste a note instead</summary>
+      <div class="mat-note">
+        <input id="matNoteTitle" type="text" placeholder="Title, e.g. Physics constants">
+        <textarea id="matNoteText" rows="5" placeholder="g = 9.81 m/s²&#10;c = 3.00 × 10⁸ m/s&#10;Quadratic formula: x = (−b ± √(b² − 4ac)) / 2a"></textarea>
+        <div><button id="matNoteAdd" class="small">Add note</button></div>
+      </div>
+    </details>
+    <ul id="matList" class="mat-list"></ul>
+  </div>
+
+  <div class="card">
+    <h2><span class="part">Part 5</span>Settings &amp; start</h2>
+    <div class="settings">
+      <label class="field"><span>Duration (minutes)</span><input id="duration" type="number" min="1" max="600" value="15"></label>
+      <label class="field"><span>Max violations before auto-submit</span><input id="maxViol" type="number" min="1" max="50" value="3"></label>
+      <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
+      <label class="inline"><input id="shuffle" type="checkbox"> Shuffle question order</label>
+      <label class="inline"><input id="allowMat" type="checkbox" checked> Allow reference materials during the test</label>
+    </div>
+    <div id="startStatus" class="status"></div>
+    <div class="row" style="margin-top:8px">
+      <button id="startBtn" class="primary big"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Start Test &amp; Lock Browser</button>
+    </div>
+    <p class="note" style="margin-top:12px">Lockdown mode puts the page in fullscreen, blocks copy/paste, right-click and common shortcuts, and logs a violation whenever you leave fullscreen, switch tabs or the window loses focus. Reference materials open inside the locked page, so using them is not a violation.</p>
+  </div>
+</section>
+
+<!-- ===================== TEST SCREEN ===================== -->
+<section id="test" class="hidden">
+  <header class="test-header">
+    <div class="inner">
+      <span class="lock-pill">Lockdown on</span>
+      <div class="timer" id="timer" aria-live="off">00:00</div>
+      <div class="stat">Answered <b id="answeredCount">0/0</b></div>
+      <div class="stat viol">Violations <b id="violCount">0</b><span id="violMax"></span></div>
+      <span class="spacer"></span>
+      <button id="matBtn" class="hidden" aria-controls="matPanel" aria-expanded="false">Reference <span id="matBtnCount" class="mat-count">0</span></button>
+      <button id="submitBtn" class="primary">Submit Test</button>
+    </div>
+    <div id="timeWarn" class="time-warn" role="status" aria-live="assertive" hidden>
+      <div class="inner">
+        <strong>5 MINUTES LEFT</strong>
+        <span id="timeWarnText">Check for unanswered questions before time runs out.</span>
+        <span class="spacer"></span>
+        <button id="timeWarnClose" class="small">Dismiss</button>
+      </div>
+    </div>
+  </header>
+  <div class="wrap" id="questionsWrap"></div>
+  <div class="wrap" style="padding-top:0; text-align:center">
+    <button id="submitBtnBottom" class="primary big">Submit Test</button>
+  </div>
+</section>
+
+<!-- ===================== RESULTS SCREEN ===================== -->
+<section id="results" class="wrap hidden">
+  <h1>Results</h1>
+  <p class="sub" id="resultSub"></p>
+  <div class="card">
+    <div class="score-hero" id="scoreHero"></div>
+    <div class="bar"><div id="scoreBar" style="width:0"></div></div>
+  </div>
+  <div class="card">
+    <h2>Lockdown violations</h2>
+    <div id="violLog"></div>
+  </div>
+  <div class="card">
+    <h2>Question review</h2>
+    <div class="filter-row" id="reviewFilters">
+      <button class="small active" data-f="all">All</button>
+      <button class="small" data-f="correct">Correct</button>
+      <button class="small" data-f="incorrect">Incorrect</button>
+      <button class="small" data-f="unanswered">Unanswered</button>
+    </div>
+    <div id="reviewList"></div>
+  </div>
+  <div class="row">
+    <button id="retakeBtn" class="primary">Retake same test</button>
+    <button id="newTestBtn">Back to setup</button>
+  </div>
+</section>
+
+<!-- ===================== REFERENCE PANEL ===================== -->
+<aside id="matPanel" class="mat-panel hidden" aria-label="Reference materials">
+  <div class="mat-head">
+    <span class="eyebrow" style="margin:0">Reference</span>
+    <span class="spacer"></span>
+    <div id="matZoomCtl" class="row" style="gap:4px;flex-wrap:nowrap">
+      <button id="matZoomOut" class="small" aria-label="Zoom out">−</button>
+      <span id="matZoomLabel" class="mat-zoom">100%</span>
+      <button id="matZoomIn" class="small" aria-label="Zoom in">+</button>
+    </div>
+    <button id="matClose" class="small">Close</button>
+  </div>
+  <div id="matTabs" class="mat-tabs" role="tablist"></div>
+  <div id="matBody" class="mat-body"></div>
+</aside>
+
+<!-- ===================== BLOCKER ===================== -->
+<div id="blocker" class="overlay blocker hidden" role="alertdialog" aria-modal="true" aria-labelledby="blockerTitle">
+  <div class="blocker-box">
+    <div class="stamp">Test paused</div>
+    <h2 id="blockerTitle">Lockdown violation</h2>
+    <p class="reason" id="blockerReason"></p>
+    <p>Your questions are hidden. The timer is <b>still running</b>.</p>
+    <p class="count" id="blockerCount"></p>
+    <button id="returnBtn" class="fs-btn big">Return to Fullscreen to Continue</button>
+  </div>
+</div>
+
+<!-- ===================== CONFIRM MODAL ===================== -->
+<div id="confirmModal" class="overlay modal-bg hidden" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h2>Submit test?</h2>
+    <p id="confirmText"></p>
+    <div class="row" style="justify-content:flex-end">
+      <button id="confirmNo">Keep working</button>
+      <button id="confirmYes" class="primary">Submit now</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------------------------------------------------------------
+   * State
+   * ------------------------------------------------------------- */
+  const LETTERS = 'ABCDEFGHIJKLMNOP';
+  const state = {
+    questions: [],          // [{question, choices:[], answer:index|-1}]
+    session: null,          // active test session
+    lastResult: null,
+  };
+
+  const $ = (id) => document.getElementById(id);
+
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  /* ---------------------------------------------------------------
+   * Sample test
+   * ------------------------------------------------------------- */
+  const SAMPLE = `General Knowledge Practice Quiz
+Name: ______________   Date: __________
+
+Directions: Choose the best answer for each question. You have 15 minutes.
+
+1. What is the chemical symbol for gold?
+A) Ag
+B) Au
+C) Gd
+D) Go
+Answer: B
+
+2. Which planet is known as the Red Planet?
+A) Venus
+B) Jupiter
+C) Mars
+D) Mercury
+Answer: C
+
+3. What is the value of 7 × 8?
+A) 54  B) 56  C) 64  D) 58
+Answer: B
+
+4. Who wrote "Pride and Prejudice"?
+A) Charlotte Brontë
+B) Mary Shelley
+*C) Jane Austen
+D) George Eliot
+
+Page 1 of 2
+
+5. The mitochondria is often called the ___ of the cell.
+A) nucleus
+B) powerhouse
+C) membrane
+D) library
+Answer: powerhouse
+
+6. True or False: Light travels faster than sound.
+A) True
+B) False
+Answer: A
+
+7. Which data structure follows First-In, First-Out (FIFO) order?
+A) Stack
+B) Queue
+C) Binary tree
+D) Hash map
+Answer: B
+
+8. In what year did the first crewed Moon landing happen?
+A) 1965
+B) 1969
+C) 1972
+D) 1959
+Answer: B`;
+
+  /* ---------------------------------------------------------------
+   * Parsing
+   * ------------------------------------------------------------- */
+  function resolveAnswer(raw, choices, { numberIsZeroBased = true } = {}) {
+    if (raw === undefined || raw === null || raw === '') return -1;
+    if (typeof raw === 'number') {
+      const idx = numberIsZeroBased ? raw : raw - 1;
+      return idx >= 0 && idx < choices.length ? idx : -1;
+    }
+    let s = String(raw).trim();
+    // "B", "(B)", "B)", "B." , "b - Paris"
+    let m = s.match(/^\(?([A-Pa-p])\)?(?:[.):\s-]|$)/);
+    if (m && (s.length <= 3 || /^\(?[A-Pa-p][.):]?\s/.test(s) || s.length === 1)) {
+      const idx = LETTERS.indexOf(m[1].toUpperCase());
+      if (idx < choices.length) return idx;
+    }
+    // "2" → 1-based in text formats
+    if (/^\d+$/.test(s)) {
+      const n = parseInt(s, 10);
+      const idx = numberIsZeroBased ? n : n - 1;
+      if (idx >= 0 && idx < choices.length) return idx;
+    }
+    // Match by choice text
+    const norm = (x) => String(x).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+    const target = norm(s.replace(/^\(?[A-Pa-p]\)?[.):]\s+/, ''));
+    let idx = choices.findIndex((c) => norm(c) === target);
+    if (idx === -1) idx = choices.findIndex((c) => norm(s) === norm(c));
+    return idx;
+  }
+
+  function normalizeText(t) {
+    t = t.replace(/\r\n?/g, '\n').replace(/ /g, ' ').replace(/\t/g, ' ');
+    // Answer lines glued onto the previous line (common in PDF extraction)
+    t = t.replace(/([^\n])[ ]+((?:correct\s+answer|answer|ans)\s*[:=\-–])/gi, '$1\n$2');
+    // A new numbered question glued after an "Answer: X"
+    t = t.replace(/((?:answer|ans)\s*[:=\-–]\s*\(?[A-Pa-p]\)?)[ ]+(?=(?:Q(?:uestion)?\s*)?\d{1,3}\s*[.)]\s)/gi, '$1\n');
+    // Inline choices "A. foo B. bar" only on lines that already start with a choice
+    t = t.split('\n').map((line) => {
+      // Question text with its choices glued on: "Capital? A) x B) y" / "1+1? A. 1 B. 2"
+      const glued = line.match(/^(.*?\S)[ ]+(\(?A([.)])[ ]+.*)$/);
+      if (glued && !/^\s*\(?A[.)]\s/.test(line)) {
+        const d = glued[3] === '.' ? '\\.' : '\\)';
+        if (new RegExp(`[ ]\\(?B${d}[ ]`).test(glued[2])) line = glued[1] + '\n' + glued[2];
+      }
+      return line.split('\n').map((l) =>
+        /^\s*\(?A[.)]\s/.test(l) ? l.replace(/[ ]+(?=\(?[B-P][.)]\s)/g, '\n') : l
+      ).join('\n');
+    }).join('\n');
+    // Inline choices with ")" delimiters:  "A) foo  B) bar"
+    t = t.replace(/([^\n])[ ]+(?=\(?[B-P]\)\s)/g, '$1\n');
+    return t;
+  }
+
+  /* Lines that are never part of a question: page numbers, running headers/footers,
+     "continue on next page", name/date blanks, section headings, copyright, URLs */
+  const NOISE = [
+    /^(?:page\s*)?\d{1,4}(?:\s*(?:of|\/)\s*\d{1,4})?$/i,                 // "3", "Page 3", "3 of 10", "3/10"
+    /^[-–—]\s*\d{1,4}\s*[-–—]$/,                                          // "- 3 -"
+    /^(?:page|pg\.?|p\.)\s*\d+\b.*$/i,                                    // "Page 3 – Biology Midterm"
+    /^(?:\(?continued\)?|continued?\s+(?:on\s+)?(?:the\s+)?(?:next|following|back)\s+(?:page|side)|go\s+on(?:\s+to\s+the\s+next\s+page)?|please\s+turn\s+over|turn\s+over|p\.?\s?t\.?\s?o\.?|stop|end\s+of\s+(?:the\s+)?(?:test|exam|quiz|section|part|paper)|this\s+page\s+(?:is\s+)?(?:intentionally\s+)?(?:left\s+)?blank)[\s.!→>\-–—]*$/i,
+    /(?:^©|copyright\s*(?:©|\(c\))?\s*\d{4}|all\s+rights\s+reserved)/i,
+    /^(?:name|date|class|period|teacher|instructor|student(?:\s*(?:id|number|no\.?))?|id|score|grade|mark|marks|signature|candidate(?:\s+number)?)\s*[:#]?\s*(?:_{2,}|\.{4,}|$).*$/i,
+    /^[_\-=.·•*~\s]{3,}$/,                                                // rules / underscores
+    /^(?:https?:\/\/|www\.)\S+$/i,
+    /^(?:section|part|unit|chapter|module)\s+(?:[A-Z]|\d{1,3}|[IVXLC]+)\b[^?]*$/i,   // headings (no "?")
+    /^(?:multiple[-\s]choice|true\s*(?:\/|or)\s*false)(?:\s+(?:questions?|section))?\s*:?$/i,
+  ];
+  const isNoise = (l) => NOISE.some((r) => r.test(l));
+  const KEY_HEAD = /^(?:answer\s*key|answers|key|solutions?|answer\s+sheet|marking\s+(?:scheme|key)|correct\s+answers)\s*:?$/i;
+  const DIRECTIONS = /^(?:general\s+)?(?:directions|instructions)\b/i;
+
+  function parseText(text) {
+    let removed = 0;
+    let lines = normalizeText(text).split('\n').map((l) => l.trim())
+      .filter((l) => { if (l && isNoise(l)) { removed++; return false; } return true; });
+    const qs = [];
+    const introParts = [];
+    let cur = null;
+    const reQ = /^(?:Q(?:uestion)?\s*)?(\d{1,3})\s*[.):]\s*(.+)$/i;
+    const reAns = /^(?:correct\s+answer|correct|answer\s*key|answer|ans|key)\s*[:=\-–]\s*(.+)$/i;
+    const reChoice = /^(\*)?\s*\(?([A-Pa-p])\s*[).\]:]\s*(.+)$/;
+
+    // A trailing "Answer Key" section: lift it out and use it as the key
+    let keyEntries = null;
+    for (let i = lines.length - 1; i > 0; i--) {
+      if (KEY_HEAD.test(lines[i])) {
+        const entries = parseKey(lines.slice(i + 1).join('\n'));
+        if (Object.keys(entries).length) { keyEntries = entries; lines = lines.slice(0, i); }
+        break;
+      }
+    }
+    const hasNumbered = lines.filter((l) => reQ.test(l)).length >= 2;
+
+    const finish = () => {
+      if (!cur) return;
+      cur.question = cur.question.trim();
+      cur.choices = cur.choices.map((c) => c.trim()).filter(Boolean);
+      if (cur.answerRaw != null && cur.answer === -1) {
+        cur.answer = resolveAnswer(cur.answerRaw, cur.choices, { numberIsZeroBased: false });
+      }
+      delete cur.answerRaw;
+      // Text with no choices before the first real question is a cover/intro page
+      if (cur.choices.length < 2 && !qs.some((q) => q.choices.length >= 2)) {
+        const t = [cur.question, ...cur.choices].filter(Boolean).join('\n');
+        if (t) introParts.push(t);
+      } else if (cur.question || cur.choices.length) {
+        qs.push(cur);
+      }
+      cur = null;
+    };
+    const start = (q) => { finish(); cur = { question: q, choices: [], answer: -1, answerRaw: null }; };
+
+    let blankSeen = false, inDirections = false;
+    for (const line of lines) {
+      if (!line) {
+        blankSeen = true;
+        if (inDirections && !hasNumbered) inDirections = false;
+        continue;
+      }
+      const afterBlank = blankSeen;
+      blankSeen = false;
+      const isQ = reQ.test(line);
+
+      // "Directions: …" blocks (cover page or between sections) are not questions
+      if (DIRECTIONS.test(line) && !isQ) { finish(); inDirections = true; introParts.push(line); continue; }
+      if (inDirections) {
+        if (isQ) inDirections = false;
+        else { introParts.push(line); continue; }
+      }
+
+      const mAns = line.match(reAns);
+      if (mAns && cur) { cur.answerRaw = mAns[1].trim(); continue; }
+
+      const mC = line.match(reChoice);
+      if (mC && cur) {
+        const idx = LETTERS.indexOf(mC[2].toUpperCase());
+        // Only accept choices in sequence (A, then B, ...) to avoid false positives
+        if (idx === cur.choices.length) {
+          let txt = mC[3];
+          let starred = !!mC[1];
+          if (/\s*\*$/.test(txt) || /\((?:correct|✓)\)\s*$/i.test(txt)) {
+            starred = true;
+            txt = txt.replace(/\s*(\*|\((?:correct|✓)\))\s*$/i, '');
+          }
+          cur.choices.push(txt);
+          if (starred) cur.answer = idx;
+          continue;
+        }
+      }
+
+      const mQ = line.match(reQ);
+      if (mQ) { start(mQ[2]); continue; }
+
+      // Continuation / un-numbered question
+      if (!cur || cur.answerRaw != null || (cur.answer !== -1 && cur.choices.length >= 2)) {
+        start(line);
+      } else if (cur.choices.length === 0) {
+        // Un-numbered test: a paragraph break before the first question ends the intro
+        if (afterBlank && !hasNumbered && !qs.length) { introParts.push(cur.question); cur.question = line; }
+        else cur.question += ' ' + line;
+      } else {
+        cur.choices[cur.choices.length - 1] += ' ' + line;
+      }
+    }
+    finish();
+    if (keyEntries) {
+      qs.forEach((q, i) => {
+        const e = keyEntries[i];
+        if (e && q.answer < 0) q.answer = resolveAnswer(e.v, q.choices, { numberIsZeroBased: e.zb });
+      });
+    }
+    qs.intro = introParts.join('\n').trim();
+    qs.removed = removed;
+    qs.keySection = !!keyEntries;
+    return qs;
+  }
+
+  function cleanupNote(qs, extraRemoved) {
+    const parts = [];
+    if (qs.intro) parts.push('set aside the introduction/instructions (shown above the questions during the test)');
+    const r = (qs.removed || 0) + (extraRemoved || 0);
+    if (r) parts.push(`removed ${r} line${r === 1 ? '' : 's'} of page numbers, headers/footers and other non-question text`);
+    if (qs.keySection) parts.push('found an answer key section at the end');
+    if (!parts.length) return '';
+    const s = parts.join('; ');
+    return ' ' + s[0].toUpperCase() + s.slice(1) + '.';
+  }
+
+
+  function pick(obj, patterns) {
+    for (const key of Object.keys(obj)) {
+      const k = key.trim().toLowerCase();
+      if (patterns.some((p) => p.test(k))) return obj[key];
+    }
+    return undefined;
+  }
+
+  function parseCSV(text) {
+    if (!window.Papa) throw new Error('PapaParse failed to load (check your internet connection).');
+    const res = Papa.parse(text.trim(), { header: true, skipEmptyLines: true, transformHeader: (h) => h.trim() });
+    const headers = (res.meta.fields || []).map((h) => h.toLowerCase());
+    const hasHeader = headers.some((h) => /^(question|q|prompt|text|stem)$/.test(h));
+    const qs = [];
+
+    if (hasHeader) {
+      for (const row of res.data) {
+        const question = pick(row, [/^(question|q|prompt|text|stem)$/]);
+        if (!question) continue;
+        let choices = [];
+        const joined = pick(row, [/^(choices|options)$/]);
+        if (joined) {
+          choices = String(joined).split(/\s*[|;]\s*/).filter(Boolean);
+        } else {
+          for (const key of Object.keys(row)) {
+            const k = key.trim().toLowerCase();
+            if (/^([a-p]|(option|choice|opt)\s*_?[a-p1-9]\d*)$/.test(k) && String(row[key]).trim() !== '') {
+              choices.push(String(row[key]).trim());
+            }
+          }
+        }
+        const ans = pick(row, [/^(answer|correct|correct\s*_?answer|key|solution)$/]);
+        qs.push({ question: String(question).trim(), choices, answer: resolveAnswer(ans, choices, { numberIsZeroBased: false }) });
+      }
+    } else {
+      // Positional: question, choice..., answer
+      const rows = Papa.parse(text.trim(), { header: false, skipEmptyLines: true }).data;
+      for (const r of rows) {
+        const cells = r.map((c) => String(c).trim());
+        if (cells.length < 3) continue;
+        const question = cells[0];
+        const choices = cells.slice(1, -1).filter(Boolean);
+        qs.push({ question, choices, answer: resolveAnswer(cells[cells.length - 1], choices, { numberIsZeroBased: false }) });
+      }
+    }
+    return qs;
+  }
+
+  function parseJSON(text) {
+    let data = JSON.parse(text);
+    if (!Array.isArray(data)) data = data.questions || data.items || data.test || [];
+    return data.map((item) => {
+      const question = item.question ?? item.q ?? item.text ?? item.prompt ?? item.stem ?? '';
+      let choices = item.choices ?? item.options ?? item.answers ?? item.alternatives ?? [];
+      if (!Array.isArray(choices) && typeof choices === 'object') {
+        choices = Object.keys(choices).sort().map((k) => choices[k]);
+      }
+      choices = choices.map((c) => (typeof c === 'object' && c !== null ? (c.text ?? c.label ?? JSON.stringify(c)) : String(c)));
+      const raw = item.answer ?? item.correct ?? item.correctAnswer ?? item.correct_answer ?? item.key;
+      return { question: String(question).trim(), choices, answer: resolveAnswer(raw, choices, { numberIsZeroBased: true }) };
+    });
+  }
+
+  function looksLikeCSV(text) {
+    const first = text.trim().split(/\r?\n/)[0] || '';
+    return /,/.test(first) && /(^|,)\s*"?(question|q|prompt)"?\s*(,|$)/i.test(first);
+  }
+
+  function parseAny(text, hint) {
+    const t = text.trim();
+    if (!t) return [];
+    if (hint === 'json' || (!hint && /^[\[{]/.test(t))) return parseJSON(t);
+    if (hint === 'csv' || (!hint && looksLikeCSV(t))) return parseCSV(t);
+    return parseText(t);
+  }
+
+  /* ---------------------------------------------------------------
+   * File handling
+   * ------------------------------------------------------------- */
+  function readAsText(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsText(file);
+    });
+  }
+  function readAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  let pdfHFRemoved = 0;   // header/footer lines dropped from the last PDF
+  async function extractPdfText(file, onProgress) {
+    if (!window.pdfjsLib) throw new Error('PDF.js failed to load (check your internet connection).');
+    const buf = await readAsArrayBuffer(file);
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    let pages = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const out = [];
+      onProgress && onProgress(p, pdf.numPages);
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      let line = '', lastY = null, lastXEnd = null;
+      for (const item of tc.items) {
+        if (typeof item.str !== 'string') continue;
+        const x = item.transform[4], y = item.transform[5];
+        if (lastY !== null && Math.abs(y - lastY) > 2) { out.push(line); line = ''; lastXEnd = null; }
+        if (lastXEnd !== null && x - lastXEnd > 1.5 && !line.endsWith(' ') && !item.str.startsWith(' ')) line += ' ';
+        line += item.str;
+        lastY = y;
+        lastXEnd = x + (item.width || 0);
+        if (item.hasEOL) { out.push(line); line = ''; lastY = null; lastXEnd = null; }
+      }
+      if (line) out.push(line);
+      pages.push(out);
+    }
+    // Running headers/footers: lines repeated in the top or bottom 3 lines of many pages
+    const norm = (l) => l.trim().toLowerCase().replace(/\d+/g, '#').replace(/\s+/g, ' ');
+    const looksLikeContent = (l) =>
+      /^\s*(?:Q(?:uestion)?\s*)?\d{1,3}\s*[.):]\s/i.test(l) ||
+      /^\s*\*?\s*\(?[A-Pa-p]\s*[).\]:]\s/.test(l) ||
+      /^\s*(?:correct\s+)?ans(?:wer)?\b/i.test(l);
+    pdfHFRemoved = 0;
+    if (pages.length >= 2) {
+      const zoneOf = (pl) => { const ne = pl.filter((l) => l.trim()); return new Set([...ne.slice(0, 3), ...ne.slice(-3)]); };
+      const counts = new Map();
+      pages.forEach((pl) => new Set([...zoneOf(pl)].map(norm)).forEach((k) => counts.set(k, (counts.get(k) || 0) + 1)));
+      const need = Math.max(2, Math.ceil(pages.length * 0.5));
+      pages = pages.map((pl) => {
+        const zone = zoneOf(pl);
+        return pl.filter((l) => {
+          if (!zone.has(l) || looksLikeContent(l) || (counts.get(norm(l)) || 0) < need) return true;
+          pdfHFRemoved++;
+          return false;
+        });
+      });
+    }
+    return pages.map((pl) => pl.join('\n')).join('\n\n');
+  }
+
+  function setStatus(el, msg, kind) {
+    el.textContent = msg;
+    el.className = 'status' + (kind ? ' ' + kind : '');
+  }
+
+  async function handleFile(file) {
+    const st = $('fileStatus');
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
+      setStatus(st, `Unsupported file type ".${ext}". Use .txt, .csv, .json or .pdf.`, 'err');
+      return;
+    }
+    try {
+      setStatus(st, `Reading ${file.name}…`);
+      let text;
+      if (ext === 'pdf') {
+        text = await extractPdfText(file, (p, n) => setStatus(st, `Extracting text from ${file.name}: page ${p}/${n}…`));
+      } else {
+        text = await readAsText(file);
+      }
+      if (ext === 'pdf' && !text.trim()) {
+        setStatus(st, `${file.name} has no selectable text. It's probably a scanned image; use a text-based PDF or paste the questions instead.`, 'err');
+        return;
+      }
+      $('rawText').value = text;
+      const qs = parseAny(text, ext === 'txt' || ext === 'pdf' ? 'text' : ext);
+      const found = ingestQuestions(qs, file.name, true);
+      if (qs.length) {
+        setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)} Check them below.`, 'ok');
+      } else {
+        setStatus(st, `Read ${file.name}, but couldn't find any questions. The extracted text is in the box below, so you can fix it and parse again.`, 'err');
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus(st, `Couldn't read ${file.name}: ${err.message}`, 'err');
+    }
+  }
+
+  const drop = $('drop'), fileInput = $('fileInput');
+  drop.addEventListener('click', () => fileInput.click());
+  drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); fileInput.value = ''; });
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+  // Prevent the browser from opening files dropped outside the zone
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => e.preventDefault());
+
+  $('parseBtn').addEventListener('click', () => {
+    const st = $('fileStatus');
+    try {
+      const qs = parseAny($('rawText').value);
+      const found = ingestQuestions(qs, 'the pasted text');
+      setStatus(st, qs.length ? `Parsed ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, 0)}${detectedNote(found)}` : 'No questions found. Check the supported formats below.', qs.length ? 'ok' : 'err');
+    } catch (err) {
+      setStatus(st, 'Parse error: ' + err.message, 'err');
+    }
+  });
+  $('sampleBtn').addEventListener('click', () => {
+    $('rawText').value = SAMPLE;
+    const qs = parseText(SAMPLE);
+    const found = ingestQuestions(qs, 'the sample test', true);
+    if (!state.materials.some((m) => m.sample)) {
+      state.materials.push({ id: ++matSeq, name: 'Sample reference sheet', kind: 'text', text: SAMPLE_SHEET, sample: true });
+      renderMatList();
+    }
+    setStatus($('fileStatus'), `Sample test loaded: ${qs.length} questions, plus a sample reference sheet.${cleanupNote(qs, 0)}${detectedNote(found)}`, 'ok');
+  });
+  $('clearBtn').addEventListener('click', () => {
+    $('rawText').value = '';
+    if (state.key && state.key.detected) state.key = null;
+    state.detectedKey = null;
+    state.intro = '';
+    setStatus($('keyStatus'), '');
+    setQuestions([]);
+    setStatus($('fileStatus'), '');
+  });
+
+  /* ---------------------------------------------------------------
+   * Editable preview
+   * ------------------------------------------------------------- */
+  /* ---------------------------------------------------------------
+   * Answers found inside the question file become the hidden key
+   * ------------------------------------------------------------- */
+  function questionsToText(qs) {
+    return qs.map((q, i) => `${i + 1}. ${q.question}\n` + q.choices.map((c, ci) => `${LETTERS[ci]}) ${c}`).join('\n')).join('\n\n');
+  }
+
+  // Parses → detects embedded answers → moves them into the key and strips them from view.
+  // Returns how many answers were detected.
+  // fresh = a newly loaded test (file or sample), not a re-parse of the edited text box
+  function ingestQuestions(qs, source, fresh) {
+    const found = qs.filter((q) => q.answer >= 0).length;
+    if (qs.intro) state.intro = qs.intro;
+    else if (fresh) state.intro = '';
+    if (fresh && !found) {
+      // Detected answers belonged to the previous test
+      if (state.key && state.key.detected) state.key = null;
+      state.detectedKey = null;
+      if (!state.key) setStatus($('keyStatus'), '');
+    }
+    if (found) {
+      const entries = {};
+      qs.forEach((q, i) => { if (q.answer >= 0) entries[i] = { v: q.answer, zb: true }; });
+      state.detectedKey = { entries, count: found, source, detected: true };
+      // A separately uploaded key takes priority; otherwise use the detected one
+      if (!state.key || state.key.detected) state.key = state.detectedKey;
+      qs = qs.map((q) => ({ ...q, answer: -1 }));
+      $('rawText').value = questionsToText(qs);   // answer lines and * markers removed
+      state.hideAnswers = true;
+      $('hideAnswers').checked = true;
+    }
+    setQuestions(qs);
+    return found;
+  }
+
+  function detectedNote(found) {
+    if (!found) return '';
+    const manual = state.key && !state.key.detected;
+    return manual
+      ? ` It also contained ${found} answer${found === 1 ? '' : 's'}; they were hidden, and your separate answer key is used instead.`
+      : ` Found answers for ${found} question${found === 1 ? '' : 's'} and moved them into the hidden answer key.`;
+  }
+
+  function setQuestions(qs) {
+    state.questions = qs.map((q) => ({
+      question: q.question || '',
+      choices: q.choices && q.choices.length ? q.choices.slice() : ['', ''],
+      answer: typeof q.answer === 'number' ? q.answer : -1,
+    }));
+    refreshKey();
+  }
+
+  function el(tag, attrs = {}, ...children) {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'class') n.className = v;
+      else if (k === 'text') n.textContent = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+      else if (v === true) n.setAttribute(k, '');
+      else if (v !== false && v != null) n.setAttribute(k, v);
+    }
+    for (const c of children) if (c != null) n.append(c);
+    return n;
+  }
+
+  function updateCount() {
+    const n = state.questions.length;
+    const missing = state.questions.filter((q) => q.answer < 0).length;
+    $('qCount').textContent = `${n} question${n === 1 ? '' : 's'}` + (missing ? ` · ${missing} without answer` : '');
+    $('qCount').className = 'badge ' + (missing ? 'warn' : n ? 'good' : 'muted');
+  }
+
+  function answerBadgeText(q) {
+    if (q.answer < 0) return 'No correct answer set';
+    return state.hideAnswers ? 'Answer set · hidden' : 'Answer: ' + LETTERS[q.answer];
+  }
+
+  function renderEditor() {
+    const root = $('editor');
+    root.innerHTML = '';
+    updateCount();
+    if (!state.questions.length) {
+      root.append(el('div', { class: 'empty', text: 'No questions yet. Upload a file, paste text, or load the sample test.' }));
+      return;
+    }
+    if (state.intro) {
+      const ta = el('textarea', { rows: 4, id: 'introText', 'aria-label': 'Introduction text' });
+      ta.value = state.intro;
+      ta.addEventListener('input', () => { state.intro = ta.value; });
+      const show = el('input', { type: 'checkbox', id: 'introShow' });
+      show.checked = state.showIntro;
+      show.addEventListener('change', () => { state.showIntro = show.checked; });
+      root.append(el('details', { class: 'intro-box' },
+        el('summary', {}, 'Introduction / instructions detected · not counted as a question'),
+        ta,
+        el('div', { class: 'row', style: 'margin-top:8px' },
+          el('label', { class: 'inline note' }, show, 'Show it above the questions during the test'),
+          el('span', { class: 'spacer' }),
+          el('button', { class: 'small danger', onclick: () => { state.intro = ''; renderEditor(); } }, 'Discard'))));
+    }
+    if (state.hideAnswers) root.append(el('p', { class: 'hidden-note', text: 'Correct answers are hidden until you submit. Untick "Hide correct answers" to see or change them.' }));
+    state.questions.forEach((q, qi) => {
+      const card = el('div', { class: 'q-edit' + (q.answer < 0 ? ' missing' : '') });
+      const badge = el('span', { class: 'badge ' + (q.answer < 0 ? 'warn' : 'good'), text: answerBadgeText(q) });
+      const refreshBadge = () => {
+        card.classList.toggle('missing', q.answer < 0);
+        badge.className = 'badge ' + (q.answer < 0 ? 'warn' : 'good');
+        badge.textContent = answerBadgeText(q);
+        updateCount();
+      };
+      card.append(el('div', { class: 'head' },
+        el('span', { class: 'num', text: `Q${qi + 1}` }), badge, el('span', { class: 'spacer' }),
+        el('button', { class: 'small', title: 'Move up', disabled: qi === 0, onclick: () => { [state.questions[qi - 1], state.questions[qi]] = [state.questions[qi], state.questions[qi - 1]]; renderEditor(); } }, '↑'),
+        el('button', { class: 'small', title: 'Move down', disabled: qi === state.questions.length - 1, onclick: () => { [state.questions[qi + 1], state.questions[qi]] = [state.questions[qi], state.questions[qi + 1]]; renderEditor(); } }, '↓'),
+        el('button', { class: 'small danger', onclick: () => { state.questions.splice(qi, 1); renderEditor(); } }, 'Delete')
+      ));
+      const ta = el('textarea', { rows: 2, 'aria-label': `Question ${qi + 1} text` });
+      ta.value = q.question;
+      ta.addEventListener('input', () => { q.question = ta.value; });
+      card.append(ta);
+
+      q.choices.forEach((c, ci) => {
+        const row = el('div', { class: 'choice-edit' + (q.answer === ci && !state.hideAnswers ? ' is-correct' : '') });
+        const radio = el('input', { type: 'radio', name: `correct-${qi}`, title: 'Mark as correct answer', 'aria-label': `Mark choice ${LETTERS[ci]} correct` });
+        radio.checked = q.answer === ci && !state.hideAnswers;
+        radio.hidden = state.hideAnswers;
+        radio.addEventListener('change', () => {
+          q.answer = ci;
+          card.querySelectorAll('.choice-edit').forEach((r, i) => r.classList.toggle('is-correct', i === ci));
+          refreshBadge();
+        });
+        const input = el('input', { type: 'text', 'aria-label': `Choice ${LETTERS[ci]}` });
+        input.value = c;
+        input.addEventListener('input', () => { q.choices[ci] = input.value; });
+        row.append(
+          el('span', { class: 'letter', text: LETTERS[ci] }),
+          input,
+          el('span', { class: 'row', style: 'gap:6px;flex-wrap:nowrap' }, radio,
+            el('button', { class: 'small danger', title: 'Remove choice', disabled: q.choices.length <= 2, onclick: () => {
+              q.choices.splice(ci, 1);
+              if (q.answer === ci) q.answer = -1; else if (q.answer > ci) q.answer--;
+              renderEditor();
+            } }, '✕'))
+        );
+        card.append(row);
+      });
+      if (q.choices.length < LETTERS.length) {
+        card.append(el('div', { style: 'margin-top:8px' },
+          el('button', { class: 'small', onclick: () => { q.choices.push(''); renderEditor(); } }, '+ Add choice')));
+      }
+      root.append(card);
+    });
+  }
+
+  $('addQBtn').addEventListener('click', () => {
+    state.questions.push({ question: '', choices: ['', '', '', ''], answer: -1 });
+    renderEditor();
+    const cards = $('editor').querySelectorAll('.q-edit textarea');
+    cards[cards.length - 1]?.focus();
+  });
+
+  /* ---------------------------------------------------------------
+   * Answer key (kept hidden until the results screen)
+   * ------------------------------------------------------------- */
+  state.detectedKey = null;  // answers found inside the question file
+  state.intro = '';          // cover page / directions set aside by the parser
+  state.showIntro = true;
+  state.key = null;          // { entries: { [questionIndex]: {v, zb} }, count, source }
+  state.hideAnswers = false;
+
+  function parseKey(text) {
+    const t = String(text || '').trim();
+    const entries = {};
+    if (!t) return entries;
+    if (/^[\[{]/.test(t)) {
+      try {
+        let data = JSON.parse(t);
+        if (data && !Array.isArray(data) && (data.answers || data.key)) data = data.answers || data.key;
+        if (Array.isArray(data)) {
+          data.forEach((v, i) => { entries[i] = { v, zb: typeof v === 'number' }; });
+        } else if (data && typeof data === 'object') {
+          for (const [k, v] of Object.entries(data)) {
+            const n = parseInt(String(k).replace(/\D/g, ''), 10);
+            if (n > 0) entries[n - 1] = { v, zb: typeof v === 'number' };
+          }
+        }
+        if (Object.keys(entries).length) return entries;
+      } catch (_) { /* not JSON: fall through to text */ }
+    }
+    let found = 0;
+    // Numbered letter pairs: "1. B", "2) C", "Q3: A", "4-D", "5,B", "6 B"
+    const pairRe = /(?:^|[^\w])(?:Q(?:uestion)?\s*)?(\d{1,3})\s*[.):\-=,]?\s*\(?([A-Pa-p])\)?(?!\w)/g;
+    let m;
+    while ((m = pairRe.exec(t))) { entries[parseInt(m[1], 10) - 1] = { v: m[2], zb: false }; found++; }
+    // Numbered text answers, one per line: "5. powerhouse"
+    for (const line of t.replace(/\r\n?/g, '\n').split('\n')) {
+      const lm = line.trim().match(/^(?:Q(?:uestion)?\s*)?(\d{1,3})\s*[.):\-=,]\s*(.+)$/i);
+      if (lm && !((parseInt(lm[1], 10) - 1) in entries)) { entries[parseInt(lm[1], 10) - 1] = { v: lm[2].trim(), zb: false }; found++; }
+    }
+    if (found) return entries;
+    // Unnumbered sequence: "BCABD", "B C A B", "B, C, A"
+    const compact = t.replace(/[\s,;|/]+/g, '');
+    const seq = /^[A-Pa-p]+$/.test(compact) ? compact.split('') : (t.match(/\b[A-Pa-p]\b/g) || []);
+    seq.forEach((v, i) => { entries[i] = { v, zb: false }; });
+    return entries;
+  }
+
+  function applyKeyToQuestions() {
+    const out = { applied: 0, unresolved: [], extra: 0 };
+    if (!state.key) return out;
+    state.questions.forEach((q, i) => {
+      const e = state.key.entries[i];
+      if (!e) return;
+      const idx = resolveAnswer(e.v, q.choices, { numberIsZeroBased: e.zb });
+      if (idx < 0) { out.unresolved.push(i + 1); return; }
+      if (q._orig === undefined) q._orig = q.answer;
+      q.answer = idx;
+      out.applied++;
+    });
+    out.extra = Object.keys(state.key.entries).filter((k) => +k >= state.questions.length).length;
+    return out;
+  }
+
+  function setHideAnswers(v) {
+    state.hideAnswers = v;
+    $('hideAnswers').checked = v;
+    renderEditor();
+  }
+
+  // Applies the key (if any) to the current questions, re-renders and reports
+  function refreshKey() {
+    const st = $('keyStatus');
+    const badge = $('keyBadge');
+    $('keyRemove').disabled = !state.key;
+    if (!state.key) {
+      badge.textContent = 'Optional'; badge.className = 'badge muted';
+      renderEditor();
+      return;
+    }
+    const r = applyKeyToQuestions();
+    renderEditor();
+    badge.textContent = state.key.detected ? 'Detected · hidden' : 'Key loaded · hidden'; badge.className = 'badge good';
+    const n = state.questions.length;
+    const k = state.key.count;
+    let msg = state.key.detected
+      ? `Answers detected in ${state.key.source}: ${k} answer${k === 1 ? '' : 's'} moved into this hidden key`
+      : `Answer key from ${state.key.source}: ${k} answer${k === 1 ? '' : 's'}`;
+    msg += n ? `, applied to ${r.applied} of ${n} question${n === 1 ? '' : 's'}.` : '. It will be applied when you load questions.';
+    const warn = [];
+    if (r.unresolved.length) warn.push(`couldn't match the key's answer to a choice for question${r.unresolved.length === 1 ? '' : 's'} ${r.unresolved.join(', ')}`);
+    if (n && r.extra) warn.push(`${r.extra} key entr${r.extra === 1 ? 'y is' : 'ies are'} past the last question`);
+    if (n && r.applied < n && !r.unresolved.length) warn.push(`${n - r.applied} question${n - r.applied === 1 ? ' has' : 's have'} no entry in the key`);
+    if (warn.length) msg += ' Check: ' + warn.join('; ') + '.';
+    setStatus(st, msg, warn.length ? 'err' : 'ok');
+  }
+
+  function loadKey(text, source) {
+    const entries = parseKey(text);
+    const count = Object.keys(entries).length;
+    if (!count) {
+      setStatus($('keyStatus'), `Couldn't find any answers in ${source}. Use a format like "1. B  2. C", "BCAD", or one numbered answer per line.`, 'err');
+      return false;
+    }
+    // Restore answers from a previous key before applying a new one
+    state.questions.forEach((q) => { if (q._orig !== undefined) { q.answer = q._orig; delete q._orig; } });
+    state.key = { entries, count, source };
+    state.hideAnswers = true;
+    $('hideAnswers').checked = true;
+    refreshKey();
+    return true;
+  }
+
+  async function handleKeyFile(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
+      setStatus($('keyStatus'), `Unsupported file type ".${ext}". Use .txt, .csv, .json or .pdf.`, 'err');
+      return;
+    }
+    try {
+      setStatus($('keyStatus'), `Reading ${file.name}…`);
+      const text = ext === 'pdf' ? await extractPdfText(file) : await readAsText(file);
+      loadKey(text, file.name);
+    } catch (err) {
+      console.error(err);
+      setStatus($('keyStatus'), `Couldn't read ${file.name}: ${err.message}`, 'err');
+    }
+  }
+
+  const keyDrop = $('keyDrop'), keyInput = $('keyInput');
+  keyDrop.addEventListener('click', () => keyInput.click());
+  keyDrop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); keyInput.click(); } });
+  keyInput.addEventListener('change', () => { if (keyInput.files[0]) handleKeyFile(keyInput.files[0]); keyInput.value = ''; });
+  ['dragenter', 'dragover'].forEach((ev) => keyDrop.addEventListener(ev, (e) => { e.preventDefault(); keyDrop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => keyDrop.addEventListener(ev, (e) => { e.preventDefault(); keyDrop.classList.remove('over'); }));
+  keyDrop.addEventListener('drop', (e) => { const f = e.dataTransfer.files[0]; if (f) handleKeyFile(f); });
+
+  $('keyApply').addEventListener('click', () => {
+    if (!$('keyText').value.trim()) { setStatus($('keyStatus'), 'Type or paste the answer key first, or upload a file.', 'err'); return; }
+    if (loadKey($('keyText').value, 'typed key')) {
+      $('keyText').value = '';           // don't leave the key sitting on screen
+      $('keyShow').checked = false;
+      $('keyText').classList.add('masked');
+    }
+  });
+  $('keyRemove').addEventListener('click', () => {
+    state.questions.forEach((q) => { if (q._orig !== undefined) { q.answer = q._orig; delete q._orig; } });
+    if (state.key && state.key.detected) {
+      state.key = null; state.detectedKey = null;
+      setStatus($('keyStatus'), 'Detected answers removed. These questions have no answer key now.', 'ok');
+    } else {
+      state.key = state.detectedKey || null;
+      setStatus($('keyStatus'), state.key ? 'Your answer key was removed. Switched back to the answers detected in the question file.' : 'Answer key removed.', 'ok');
+    }
+    refreshKey();
+  });
+  $('keyShow').addEventListener('change', () => $('keyText').classList.toggle('masked', !$('keyShow').checked));
+  $('hideAnswers').addEventListener('change', () => setHideAnswers($('hideAnswers').checked));
+
+  /* ---------------------------------------------------------------
+   * Reference materials (formula sheets, notes)
+   * ------------------------------------------------------------- */
+  state.materials = [];   // [{id, name, kind:'image'|'pages'|'text', src|pages|text}]
+  let matSeq = 0;
+  const MAX_PDF_PAGES = 30;
+
+  function readAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(fr.error);
+      fr.readAsDataURL(file);
+    });
+  }
+
+  // Render PDF pages to images so formulas, symbols and diagrams keep their layout
+  async function renderPdfPages(file, onProgress) {
+    if (!window.pdfjsLib) throw new Error('PDF.js failed to load (check your internet connection).');
+    const buf = await readAsArrayBuffer(file);
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    const n = Math.min(pdf.numPages, MAX_PDF_PAGES);
+    const pages = [];
+    for (let p = 1; p <= n; p++) {
+      onProgress && onProgress(p, n);
+      const page = await pdf.getPage(p);
+      const vp = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      pages.push(canvas.toDataURL('image/jpeg', 0.88));
+    }
+    return { pages, truncated: pdf.numPages > n };
+  }
+
+  function matKindLabel(m) {
+    if (m.kind === 'pages') return `PDF · ${m.pages.length} page${m.pages.length === 1 ? '' : 's'}${m.truncated ? ` (first ${MAX_PDF_PAGES})` : ''}`;
+    return m.kind === 'image' ? 'Image' : 'Text note';
+  }
+
+  function renderMatList() {
+    const list = $('matList');
+    list.innerHTML = '';
+    const n = state.materials.length;
+    $('matCount').textContent = n ? `${n} item${n === 1 ? '' : 's'}` : 'None';
+    $('matCount').className = 'badge ' + (n ? 'good' : 'muted');
+    state.materials.forEach((m, i) => {
+      const thumb = m.kind === 'text'
+        ? el('div', { class: 'mat-thumb txt', text: 'Aa' })
+        : el('img', { class: 'mat-thumb', src: m.kind === 'image' ? m.src : m.pages[0], alt: '' });
+      const name = el('input', { type: 'text', id: `mat-name-${m.id}`, 'aria-label': 'Material name' });
+      name.value = m.name;
+      name.addEventListener('input', () => { m.name = name.value; });
+      list.append(el('li', { class: 'mat-item' }, thumb,
+        el('div', { class: 'mat-meta' }, name, el('span', { class: 'note', text: matKindLabel(m) })),
+        el('button', { class: 'small danger', onclick: () => { state.materials.splice(i, 1); renderMatList(); } }, 'Remove')));
+    });
+  }
+
+  async function addMaterialFiles(files) {
+    const st = $('matStatus');
+    const problems = [];
+    let added = 0;
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const base = file.name.replace(/\.[^.]+$/, '') || file.name;
+      try {
+        if (file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
+          setStatus(st, `Adding ${file.name}…`);
+          state.materials.push({ id: ++matSeq, name: base, kind: 'image', src: await readAsDataURL(file) });
+        } else if (ext === 'pdf') {
+          const { pages, truncated } = await renderPdfPages(file, (p, n) => setStatus(st, `Rendering ${file.name}: page ${p}/${n}…`));
+          state.materials.push({ id: ++matSeq, name: base, kind: 'pages', pages, truncated });
+        } else if (['txt', 'md'].includes(ext) || file.type.startsWith('text/')) {
+          state.materials.push({ id: ++matSeq, name: base, kind: 'text', text: await readAsText(file) });
+        } else {
+          problems.push(`${file.name} (use an image, PDF, .txt or .md)`);
+          continue;
+        }
+        added++;
+      } catch (err) {
+        console.error(err);
+        problems.push(`${file.name} (${err.message})`);
+      }
+    }
+    renderMatList();
+    if (problems.length) setStatus(st, `${added ? `Added ${added}. ` : ''}Couldn't add: ${problems.join(', ')}.`, 'err');
+    else if (added) setStatus(st, `Added ${added} item${added === 1 ? '' : 's'}. They'll be available in the test's Reference panel.`, 'ok');
+  }
+
+  const matDrop = $('matDrop'), matInput = $('matInput');
+  matDrop.addEventListener('click', () => matInput.click());
+  matDrop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); matInput.click(); } });
+  matInput.addEventListener('change', () => { if (matInput.files.length) addMaterialFiles([...matInput.files]); matInput.value = ''; });
+  ['dragenter', 'dragover'].forEach((ev) => matDrop.addEventListener(ev, (e) => { e.preventDefault(); matDrop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => matDrop.addEventListener(ev, (e) => { e.preventDefault(); matDrop.classList.remove('over'); }));
+  matDrop.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) addMaterialFiles([...e.dataTransfer.files]); });
+
+  $('matNoteAdd').addEventListener('click', () => {
+    const text = $('matNoteText').value.trim();
+    if (!text) { setStatus($('matStatus'), 'Type or paste some text for the note first.', 'err'); return; }
+    state.materials.push({ id: ++matSeq, name: $('matNoteTitle').value.trim() || 'Notes', kind: 'text', text });
+    $('matNoteText').value = ''; $('matNoteTitle').value = '';
+    renderMatList();
+    setStatus($('matStatus'), 'Note added.', 'ok');
+  });
+
+  const SAMPLE_SHEET = `Allowed reference sheet (sample)
+
+Multiplication: 6 × 7 = 42 · 6 × 9 = 54 · 8 × 9 = 72
+Planets in order: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
+Speed of light: c ≈ 3.00 × 10⁸ m/s
+Speed of sound in air: ≈ 343 m/s
+Queue = FIFO · Stack = LIFO`;
+
+  // During the test
+  let matActive = 0, matZoom = 1;
+  function setupMaterialsForSession() {
+    const s = state.session;
+    s.materials = $('allowMat').checked ? state.materials.slice() : [];
+    s.matOpens = 0;
+    $('matBtn').classList.toggle('hidden', !s.materials.length);
+    $('matBtnCount').textContent = s.materials.length;
+    matActive = 0; matZoom = 1;
+    closeMatPanel();
+  }
+  function openMatPanel() {
+    const s = state.session;
+    if (!s || !s.materials || !s.materials.length) return;
+    s.matOpens++;
+    renderMatPanel();
+    $('matPanel').classList.remove('hidden');
+    $('matBtn').setAttribute('aria-expanded', 'true');
+    $('matClose').focus();
+  }
+  function closeMatPanel() {
+    $('matPanel').classList.add('hidden');
+    $('matBtn').setAttribute('aria-expanded', 'false');
+  }
+  function applyMatZoom() {
+    $('matZoomLabel').textContent = Math.round(matZoom * 100) + '%';
+    $('matBody').querySelectorAll('img').forEach((img) => { img.style.width = matZoom * 100 + '%'; });
+  }
+  function renderMatPanel() {
+    const s = state.session;
+    const tabs = $('matTabs');
+    tabs.innerHTML = '';
+    tabs.classList.toggle('hidden', s.materials.length < 2);
+    s.materials.forEach((m, i) => tabs.append(el('button', {
+      class: 'small' + (i === matActive ? ' active' : ''), role: 'tab', 'aria-selected': i === matActive ? 'true' : 'false',
+      onclick: () => { matActive = i; matZoom = 1; renderMatPanel(); },
+    }, m.name || `Item ${i + 1}`)));
+    const m = s.materials[matActive];
+    const body = $('matBody');
+    body.innerHTML = '';
+    body.scrollTop = 0;
+    $('matZoomCtl').classList.toggle('hidden', m.kind === 'text');
+    if (m.kind === 'text') {
+      body.append(el('div', { class: 'mat-text', text: m.text }));
+    } else {
+      const srcs = m.kind === 'image' ? [m.src] : m.pages;
+      srcs.forEach((src, pi) => body.append(el('img', { src, draggable: 'false', alt: m.kind === 'pages' ? `${m.name}, page ${pi + 1}` : m.name })));
+    }
+    applyMatZoom();
+  }
+  $('matBtn').addEventListener('click', () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()));
+  $('matClose').addEventListener('click', closeMatPanel);
+  $('matZoomIn').addEventListener('click', () => { matZoom = Math.min(3, matZoom + 0.25); applyMatZoom(); });
+  $('matZoomOut').addEventListener('click', () => { matZoom = Math.max(0.5, matZoom - 0.25); applyMatZoom(); });
+
+  /* ---------------------------------------------------------------
+   * Lockdown: fullscreen helpers
+   * ------------------------------------------------------------- */
+  const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function requestFs() {
+    const elx = document.documentElement;
+    const fn = elx.requestFullscreen || elx.webkitRequestFullscreen;
+    if (!fn) return Promise.reject(new Error('Fullscreen API not supported'));
+    try {
+      const r = fn.call(elx, { navigationUI: 'hide' });
+      return r && r.then ? r : Promise.resolve();
+    } catch (e) { return Promise.reject(e); }
+  }
+  function exitFs() {
+    if (!isFullscreen()) return;
+    const fn = document.exitFullscreen || document.webkitExitFullscreen;
+    try { const r = fn && fn.call(document); r && r.catch && r.catch(() => {}); } catch (_) {}
+  }
+  function lockKeyboard() {
+    // Keyboard Lock API (Chromium): lets the page capture Esc, Ctrl+W, Ctrl+T etc. while fullscreen.
+    // Esc then must be *held* to exit fullscreen.
+    if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock().catch(() => {});
+  }
+  function unlockKeyboard() {
+    if (navigator.keyboard && navigator.keyboard.unlock) try { navigator.keyboard.unlock(); } catch (_) {}
+  }
+
+  /* ---------------------------------------------------------------
+   * Start test
+   * ------------------------------------------------------------- */
+  $('startBtn').addEventListener('click', () => {
+    const st = $('startStatus');
+    const qs = state.questions
+      .map((q) => ({ question: q.question.trim(), choices: q.choices.map((c) => c.trim()), answer: q.answer }))
+      .map((q) => {
+        // drop empty choices, remap answer
+        const keep = q.choices.map((c, i) => [c, i]).filter(([c]) => c !== '');
+        const answer = keep.findIndex(([, i]) => i === q.answer);
+        return { question: q.question, choices: keep.map(([c]) => c), answer };
+      });
+    if (!qs.length) { setStatus(st, 'Add at least one question first (try "Load sample test").', 'err'); return; }
+    const bad = qs.findIndex((q) => !q.question || q.choices.length < 2);
+    if (bad !== -1) { setStatus(st, `Question ${bad + 1} needs text and at least two non-empty choices.`, 'err'); return; }
+    const minutes = parseFloat($('duration').value);
+    if (!(minutes > 0)) { setStatus(st, 'Set a test duration greater than 0 minutes.', 'err'); return; }
+    setStatus(st, '');
+
+    // Must be called synchronously inside the click (user gesture) handler.
+    const fsPromise = requestFs();
+
+    let order = qs.map((_, i) => i);
+    if ($('shuffle').checked) {
+      for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    }
+    beginSession(order.map((i) => qs[i]), minutes);
+
+    fsPromise.then(() => {
+      lockKeyboard();
+    }).catch(() => {
+      showBlocker('Fullscreen could not be enabled. Click below to enter fullscreen and begin.', false);
+    });
+  });
+
+  function beginSession(questions, minutes) {
+    const now = Date.now();
+    state.session = {
+      questions,
+      minutes,
+      answers: new Array(questions.length).fill(-1),
+      startTime: now,
+      endTime: now + minutes * 60000,
+      violations: [],
+      maxViolations: Math.max(1, parseInt($('maxViol').value, 10) || 3),
+      autoSubmit: $('autoSubmit').checked,
+      locked: true,
+      graceUntil: now + 1200,     // ignore focus noise right after entering fullscreen
+      blockerShown: false,
+      timerId: null,
+      submitted: false,
+    };
+    setupMaterialsForSession();
+    hideTimeWarning();
+    document.body.classList.add('locked');
+    showScreen('test');
+    renderTest();
+    updateHeader();
+    tick();
+    state.session.timerId = setInterval(tick, 250);
+    window.scrollTo(0, 0);
+  }
+
+  function showScreen(name) {
+    ['setup', 'test', 'results'].forEach((s) => $(s).classList.toggle('hidden', s !== name));
+  }
+
+  function renderTest() {
+    const s = state.session;
+    const wrap = $('questionsWrap');
+    wrap.innerHTML = '';
+    if (state.intro && state.showIntro) {
+      wrap.append(el('details', { class: 'q-card intro-card', open: true },
+        el('summary', {}, 'Instructions'), el('div', { class: 'intro-text', text: state.intro })));
+    }
+    s.questions.forEach((q, qi) => {
+      const card = el('div', { class: 'q-card', id: `q-${qi}` });
+      card.append(el('div', { class: 'qtext' }, el('span', { class: 'n', text: `${qi + 1}.` }), q.question));
+      const group = el('div', { role: 'radiogroup', 'aria-label': `Question ${qi + 1}` });
+      q.choices.forEach((c, ci) => {
+        const input = el('input', { type: 'radio', name: `ans-${qi}`, value: ci });
+        const label = el('label', { class: 'opt' }, input, el('span', { class: 'l', text: LETTERS[ci] }), el('span', { text: c }));
+        input.addEventListener('change', () => {
+          s.answers[qi] = ci;
+          group.querySelectorAll('.opt').forEach((o, i) => o.classList.toggle('sel', i === ci));
+          updateHeader();
+        });
+        group.append(label);
+      });
+      card.append(group);
+      wrap.append(card);
+    });
+  }
+
+  function fmtTime(ms) {
+    const total = Math.max(0, Math.round(ms / 1000));
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h ? `${h}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+  }
+
+  const WARN_MS = 5 * 60000;
+  let timeWarnTimer = null;
+  function showTimeWarning() {
+    const s = state.session;
+    const unanswered = s.answers.filter((a) => a < 0).length;
+    $('timeWarnText').textContent = unanswered
+      ? `You have ${unanswered} unanswered question${unanswered === 1 ? '' : 's'}.`
+      : 'All questions answered. Use the time left to review.';
+    $('timeWarn').hidden = false;
+    beep();
+    clearTimeout(timeWarnTimer);
+    timeWarnTimer = setTimeout(hideTimeWarning, 15000);
+  }
+  function hideTimeWarning() { clearTimeout(timeWarnTimer); $('timeWarn').hidden = true; }
+  $('timeWarnClose').addEventListener('click', hideTimeWarning);
+
+  // Short two-tone chime (allowed: the user already clicked Start)
+  function beep() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      const ac = new AC();
+      [0, 0.28].forEach((at, i) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = i ? 660 : 880;
+        const t0 = ac.currentTime + at;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.25);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t0); o.stop(t0 + 0.27);
+      });
+      setTimeout(() => ac.close().catch(() => {}), 1000);
+    } catch (_) { /* sound is optional */ }
+  }
+
+  function tick() {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    const left = s.endTime - Date.now();
+    const t = $('timer');
+    t.textContent = fmtTime(Math.ceil(left / 1000) * 1000);
+    t.classList.toggle('warn', left <= WARN_MS && left > 60000 && s.minutes * 60000 > WARN_MS);
+    t.classList.toggle('low', left <= 60000);
+    // Warn once at 5 minutes (only if the test was longer than that)
+    if (!s.warned && left <= WARN_MS && left > 0 && s.minutes * 60000 > WARN_MS) {
+      s.warned = true;
+      showTimeWarning();
+    }
+    if (left <= 0) submitTest('time');
+  }
+
+  function updateHeader() {
+    const s = state.session;
+    if (!s) return;
+    const answered = s.answers.filter((a) => a >= 0).length;
+    $('answeredCount').textContent = `${answered}/${s.questions.length}`;
+    $('violCount').textContent = s.violations.length;
+    $('violMax').textContent = s.autoSubmit ? ` / ${s.maxViolations}` : '';
+  }
+
+  /* ---------------------------------------------------------------
+   * Violations & blocker
+   * ------------------------------------------------------------- */
+  function addViolation(reason) {
+    const s = state.session;
+    if (!s || !s.locked || s.submitted) return;
+    const now = Date.now();
+    if (now < s.graceUntil) return;
+
+    // One action (e.g. Alt+Tab) can fire blur + visibilitychange + fullscreenchange together.
+    // Merge events that arrive within 1.5s while the blocker is up into a single violation.
+    const last = s.violations[s.violations.length - 1];
+    if (last && s.blockerShown && now - last.time < 1500) {
+      if (!last.reasons.includes(reason)) last.reasons.push(reason);
+      showBlocker(last.reasons.join(' + '), true);
+      return;
+    }
+    s.violations.push({ time: now, elapsed: now - s.startTime, reasons: [reason] });
+    updateHeader();
+    showBlocker(reason, true);
+
+    if (s.autoSubmit && s.violations.length >= s.maxViolations) {
+      // Give the blocker a moment to render, then auto-submit
+      setTimeout(() => submitTest('violations'), 600);
+    }
+  }
+
+  function showBlocker(reason, counted) {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    s.blockerShown = true;
+    $('questionsWrap').style.visibility = 'hidden';
+    $('blocker').classList.remove('hidden');
+    $('blockerTitle').textContent = counted ? 'Lockdown violation' : 'Fullscreen required';
+    $('blockerReason').textContent = reason;
+    const n = s.violations.length;
+    let countMsg = `Violations: ${n}`;
+    if (s.autoSubmit) {
+      const left = s.maxViolations - n;
+      countMsg += left > 0 ? `. The test auto-submits after ${s.maxViolations} (${left} left).` : '. Limit reached: submitting your test…';
+    }
+    $('blockerCount').textContent = countMsg;
+    $('returnBtn').disabled = s.autoSubmit && n >= s.maxViolations;
+  }
+
+  function hideBlocker() {
+    const s = state.session;
+    if (!s) return;
+    s.blockerShown = false;
+    $('blocker').classList.add('hidden');
+    $('questionsWrap').style.visibility = '';
+  }
+
+  $('returnBtn').addEventListener('click', () => {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    s.graceUntil = Date.now() + 1000;
+    if (isFullscreen()) {
+      hideBlocker();
+      return;
+    }
+    requestFs().then(() => {
+      lockKeyboard();
+      s.graceUntil = Date.now() + 800;
+      hideBlocker();
+    }).catch(() => {
+      $('blockerReason').textContent = 'Fullscreen request was denied. Try again (some browsers need a direct click).';
+    });
+  });
+
+  // Fullscreen exit (Esc, F11, browser UI)
+  const onFsChange = () => {
+    const s = state.session;
+    if (!s || !s.locked) return;
+    if (!isFullscreen()) {
+      // Ignore the grace window for this one: leaving fullscreen is always a violation
+      s.graceUntil = 0;
+      addViolation('Exited fullscreen');
+    }
+  };
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+
+  // Tab switch / minimize
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') addViolation('Switched tab or minimized window');
+  });
+
+  // Clicked outside the browser / Alt+Tab / another window took focus
+  window.addEventListener('blur', () => {
+    // Ignore blur caused by our own confirm modal etc. (none use native dialogs)
+    addViolation('Browser window lost focus');
+  });
+
+  /* ---------------------------------------------------------------
+   * Anti-cheating restrictions (active only while locked)
+   * ------------------------------------------------------------- */
+  const locked = () => state.session && state.session.locked;
+  ['contextmenu', 'copy', 'cut', 'paste', 'selectstart', 'dragstart', 'drop'].forEach((ev) => {
+    document.addEventListener(ev, (e) => { if (locked()) e.preventDefault(); }, true);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!locked()) return;
+    const k = e.key.toLowerCase();
+    const mod = e.ctrlKey || e.metaKey;
+    const blockedCombo =
+      (mod && ['c', 'v', 'x', 'a', 't', 'w', 'n', 'r', 'p', 's', 'u', 'f', 'g', 'h', 'j', 'o', 'l', 'd', 'e', 'k', 'tab'].includes(k)) ||
+      (mod && e.shiftKey && ['i', 'j', 'c', 'k', 'n', 't', 'delete'].includes(k)) ||
+      (e.altKey && ['tab', 'arrowleft', 'arrowright', 'home', 'f4'].includes(k)) ||
+      ['f1', 'f3', 'f5', 'f6', 'f7', 'f11', 'f12', 'printscreen', 'contextmenu'].includes(k) ||
+      (e.shiftKey && k === 'f10');
+    if (blockedCombo) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    // Esc is captured when Keyboard Lock is active (Chromium); swallow it.
+    if (k === 'escape') { e.preventDefault(); closeMatPanel(); }
+  }, true);
+
+  window.addEventListener('beforeunload', (e) => {
+    if (locked()) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ---------------------------------------------------------------
+   * Submit
+   * ------------------------------------------------------------- */
+  function askSubmit() {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    const unanswered = s.answers.filter((a) => a < 0).length;
+    $('confirmText').textContent = unanswered
+      ? `You have ${unanswered} unanswered question${unanswered === 1 ? '' : 's'}. Once you submit, you can't change your answers.`
+      : 'All questions answered. Once you submit, you can\'t change your answers.';
+    $('confirmModal').classList.remove('hidden');
+    $('confirmNo').focus();
+  }
+  $('submitBtn').addEventListener('click', askSubmit);
+  $('submitBtnBottom').addEventListener('click', askSubmit);
+  $('confirmNo').addEventListener('click', () => $('confirmModal').classList.add('hidden'));
+  $('confirmYes').addEventListener('click', () => { $('confirmModal').classList.add('hidden'); submitTest('manual'); });
+
+  function submitTest(reason) {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    s.submitted = true;
+    s.locked = false;
+    clearInterval(s.timerId);
+    const finishedAt = Math.min(Date.now(), s.endTime);
+
+    hideBlocker();
+    closeMatPanel();
+    hideTimeWarning();
+    $('confirmModal').classList.add('hidden');
+    document.body.classList.remove('locked');
+    unlockKeyboard();
+    exitFs();
+
+    state.lastResult = { ...s, finishedAt, reason };
+    renderResults(state.lastResult);
+    showScreen('results');
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------------------------------------------------------------
+   * Results
+   * ------------------------------------------------------------- */
+  function renderResults(r) {
+    const graded = r.questions.map((q, i) => {
+      const a = r.answers[i];
+      let status;
+      if (q.answer < 0) status = 'nokey';
+      else if (a < 0) status = 'unanswered';
+      else status = a === q.answer ? 'correct' : 'incorrect';
+      return { q, a, status };
+    });
+    const scorable = graded.filter((g) => g.status !== 'nokey').length;
+    const correct = graded.filter((g) => g.status === 'correct').length;
+    const incorrect = graded.filter((g) => g.status === 'incorrect').length;
+    const unanswered = graded.filter((g) => g.status === 'unanswered').length;
+    const pct = scorable ? Math.round((correct / scorable) * 1000) / 10 : 0;
+    const taken = r.finishedAt - r.startTime;
+
+    const reasonText = { manual: 'Submitted manually', time: 'Time ran out: submitted automatically', violations: `Auto-submitted after ${r.violations.length} lockdown violations` }[r.reason];
+    const matNote = r.materials && r.materials.length ? ` · Reference panel opened ${r.matOpens} time${r.matOpens === 1 ? '' : 's'}` : '';
+    $('resultSub').textContent = `${reasonText} · ${new Date(r.finishedAt).toLocaleString()}${matNote}`;
+
+    const hero = $('scoreHero');
+    hero.innerHTML = '';
+    const metric = (v, k, cls = '') => el('div', { class: 'metric ' + cls }, el('div', { class: 'v', text: v }), el('div', { class: 'k', text: k }));
+    hero.append(
+      metric(`${pct}%`, 'Score', 'main'),
+      metric(`${correct}/${scorable}`, 'Correct'),
+      metric(String(incorrect), 'Incorrect'),
+      metric(String(unanswered), 'Unanswered'),
+      metric(fmtTime(taken), `Time taken (of ${fmtTime(r.minutes * 60000)})`),
+      metric(String(r.violations.length), 'Violations')
+    );
+    const bar = $('scoreBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct >= 70 ? 'var(--good)' : pct >= 50 ? 'var(--warn)' : 'var(--bad)';
+
+    // Violation log
+    const log = $('violLog');
+    log.innerHTML = '';
+    if (!r.violations.length) {
+      log.append(el('p', { class: 'note', text: 'No violations recorded. Clean session.' }));
+    } else {
+      const tbody = el('tbody');
+      r.violations.forEach((v, i) => tbody.append(el('tr', {},
+        el('td', { text: String(i + 1) }),
+        el('td', { text: new Date(v.time).toLocaleTimeString() }),
+        el('td', { text: '+' + fmtTime(v.elapsed) }),
+        el('td', { text: v.reasons.join(' + ') })
+      )));
+      log.append(el('div', { class: 'table-wrap' }, el('table', {},
+        el('thead', {}, el('tr', {}, el('th', { text: '#' }), el('th', { text: 'Time' }), el('th', { text: 'Into test' }), el('th', { text: 'Event' }))),
+        tbody)));
+    }
+
+    // Review
+    const list = $('reviewList');
+    list.innerHTML = '';
+    graded.forEach((g, i) => {
+      const badgeMap = { correct: ['good', 'Correct'], incorrect: ['bad', 'Incorrect'], unanswered: ['warn', 'Unanswered'], nokey: ['muted', 'No answer key'] };
+      const [bcls, btxt] = badgeMap[g.status];
+      const ul = el('ul');
+      g.q.choices.forEach((c, ci) => {
+        let cls = '', tag = '';
+        if (ci === g.q.answer) { cls = 'is-correct'; tag = ci === g.a ? '✓ Your answer · Correct' : '✓ Correct answer'; }
+        else if (ci === g.a) { cls = 'is-wrong-pick'; tag = '✗ Your answer'; }
+        ul.append(el('li', { class: cls }, el('b', { text: LETTERS[ci] + ')' }), el('span', { text: c }), tag ? el('span', { class: 'tag', text: tag }) : null));
+      });
+      const summary = el('p', { class: 'note', style: 'margin:8px 0 0' },
+        `Your answer: ${g.a >= 0 ? LETTERS[g.a] : '-'} · Correct answer: ${g.q.answer >= 0 ? LETTERS[g.q.answer] : 'n/a'}`);
+      list.append(el('div', { class: 'review ' + g.status, 'data-status': g.status },
+        el('div', { class: 'row' }, el('b', { text: `Question ${i + 1}` }), el('span', { class: 'badge ' + bcls, text: btxt })),
+        el('div', { class: 'qtext', text: g.q.question }),
+        ul, summary));
+    });
+    applyReviewFilter('all');
+  }
+
+  function applyReviewFilter(f) {
+    document.querySelectorAll('#reviewFilters button').forEach((b) => b.classList.toggle('active', b.dataset.f === f));
+    document.querySelectorAll('#reviewList .review').forEach((r) => {
+      r.classList.toggle('hidden', f !== 'all' && r.dataset.status !== f);
+    });
+  }
+  $('reviewFilters').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]');
+    if (b) applyReviewFilter(b.dataset.f);
+  });
+
+  $('retakeBtn').addEventListener('click', () => {
+    showScreen('setup');
+    window.scrollTo(0, 0);
+    setStatus($('startStatus'), 'Ready. Click "Start Test & Lock Browser" to retake.', 'ok');
+    $('startBtn').focus();
+  });
+  $('newTestBtn').addEventListener('click', () => { showScreen('setup'); window.scrollTo(0, 0); });
+
+  // Expose parsers for debugging in the console
+  window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state };
+})();
+</script>
+</body>
+</html>
