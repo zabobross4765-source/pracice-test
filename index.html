@@ -259,6 +259,53 @@
   .filter-row button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
   .note { font-size: 13px; color: var(--muted); }
 
+  /* Assessments: question types, navigator, short answers, grading */
+  .type-select { width: auto; padding: 4px 8px; font-size: 13px; }
+  .q-edit .head .badge { max-width: 48%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sa-edit { display: grid; gap: 10px; margin-top: 10px; }
+  .sa-edit .row2 { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 10px; align-items: end; }
+  .palette-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 14px; }
+  .palette { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pal-btn {
+    width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 50%;
+    font: 600 12px/1 var(--font-mono); border: 1.5px solid var(--ink); color: var(--ink); background: var(--surface);
+  }
+  .pal-btn:hover { border-color: var(--ink); background: var(--ink-soft); }
+  .pal-btn.answered { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .pal-btn.current { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .q-card { scroll-margin-top: 104px; }
+  .q-card:focus { outline: none; }
+  .q-card:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .q-card .qtext .qbody { flex: 1; min-width: 0; }
+  .q-type {
+    flex: none; align-self: flex-start; font: 600 10.5px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--border); padding: 4px 6px; border-radius: 3px;
+  }
+  .sa-label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .sa-input { min-height: 110px; }
+  body.locked textarea { -webkit-user-select: text !important; user-select: text !important; }
+  .card-nav { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .card-nav .pos { font: 600 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .type-split { margin: 12px 0 0; font-size: 14px; color: var(--muted); }
+  .type-split.pending { color: var(--warn); font-weight: 600; }
+  .ans-block { display: grid; gap: 8px; margin-top: 4px; }
+  .ans-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 10px; }
+  .ans-box .k { font: 600 10.5px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .ans-box .t { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ans-box.correct-box { border-color: var(--good); background: var(--good-soft); }
+  .ans-box.wrong-box { border-color: var(--bad); background: var(--bad-soft); }
+  .ans-box.explain { margin-top: 10px; background: var(--surface-2); font-size: 14px; }
+  .kw { display: inline-block; font: 500 12px/1.4 var(--font-mono); padding: 2px 6px; border-radius: 3px; background: var(--surface-2); margin: 2px 4px 2px 0; }
+  .kw.hit { background: var(--good-soft); color: var(--good); }
+  .grade-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+  .grade-row button.g-ok[aria-pressed="true"] { background: var(--good); border-color: var(--good); color: var(--surface); }
+  .grade-row button.g-bad[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+  .review.review .row b { color: var(--ink); }
+  @media (max-width: 560px) {
+    .sa-edit .row2 { grid-template-columns: 1fr; }
+    .q-edit .head .badge { max-width: 100%; }
+  }
+
   /* Detected introduction */
   .intro-box { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; background: var(--surface-2); }
   .intro-box summary { font-weight: 600; font-size: 14px; color: var(--text); }
@@ -359,7 +406,20 @@ question,A,B,C,D,answer
 
 JSON
 [{"question":"...","choices":["..","..",".."],"answer":"B"}]
-(answer can be a letter, 0-based index, or the choice text)</pre>
+(answer can be a letter, 0-based index, or the choice text)
+SHORT ANSWER (text / PDF)
+6. What is the powerhouse of the cell?
+Type: short       (optional: a question with no choices is short answer)
+Keywords: mitochondria; mitochondrion   (any one = correct)
+Match: all        (optional: every keyword must appear)
+Model answer: The mitochondria
+Explanation: ...  (works for multiple choice too)
+No keywords? You grade it yourself against the model answer.
+"Answer: x; y" on a short-answer question sets both.
+
+CSV extra columns: type, keywords, model answer, explanation
+JSON: {"type":"short","question":"...","keywords":["..."],
+       "modelAnswer":"...","explanation":"..."}</pre>
     </details>
   </div>
 
@@ -392,7 +452,8 @@ JSON
       <span id="qCount" class="badge muted">0 questions</span>
       <span class="spacer"></span>
       <label class="inline note"><input id="hideAnswers" type="checkbox"> Hide correct answers</label>
-      <button id="addQBtn" class="small">+ Add question</button>
+      <button id="addQBtn" class="small">+ Multiple choice</button>
+      <button id="addSaBtn" class="small">+ Short answer</button>
     </div>
     <div id="editor"><div class="empty">No questions yet. Upload a file, paste text, or load the sample test.</div></div>
   </div>
@@ -423,6 +484,8 @@ JSON
   <div class="card">
     <h2><span class="part">Part 5</span>Settings &amp; start</h2>
     <div class="settings">
+      <label class="field"><span>Question types</span><select id="testMode"><option value="all">Mixed: all questions</option><option value="mcq">Multiple choice only</option><option value="short">Short answer only</option></select></label>
+      <label class="field"><span>Layout</span><select id="layoutMode"><option value="list">All questions on one page</option><option value="single">One question at a time</option></select></label>
       <label class="field"><span>Duration (minutes)</span><input id="duration" type="number" min="1" max="600" value="15"></label>
       <label class="field"><span>Max violations before auto-submit</span><input id="maxViol" type="number" min="1" max="50" value="3"></label>
       <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
@@ -471,6 +534,7 @@ JSON
   <div class="card">
     <div class="score-hero" id="scoreHero"></div>
     <div class="bar"><div id="scoreBar" style="width:0"></div></div>
+    <p id="typeSplit" class="type-split"></p>
   </div>
   <div class="card">
     <h2>Lockdown violations</h2>
@@ -483,11 +547,12 @@ JSON
       <button class="small" data-f="correct">Correct</button>
       <button class="small" data-f="incorrect">Incorrect</button>
       <button class="small" data-f="unanswered">Unanswered</button>
+      <button class="small" data-f="review">Needs grading</button>
     </div>
     <div id="reviewList"></div>
   </div>
   <div class="row">
-    <button id="retakeBtn" class="primary">Retake same test</button>
+    <button id="retakeBtn" class="primary">Retake test</button>
     <button id="newTestBtn">Back to setup</button>
   </div>
 </section>
@@ -548,6 +613,36 @@ JSON
 
   const $ = (id) => document.getElementById(id);
 
+  /* ---------------------------------------------------------------
+   * Question model
+   *   { type: 'mcq' | 'short', question, choices[], answer (mcq index),
+   *     accepted[] (short: keywords/accepted answers), keywordMode 'any'|'all',
+   *     modelAnswer, explanation }
+   * ------------------------------------------------------------- */
+  function splitAccepted(v) {
+    if (Array.isArray(v)) return v.map((x) => String(x).trim()).filter(Boolean);
+    const s = String(v ?? '');
+    // ";" or "|" separate answers; commas only when neither is used
+    return (/[;|]/.test(s) ? s.split(/\s*[;|]\s*/) : s.split(/\s*,\s*/)).map((x) => x.trim()).filter(Boolean);
+  }
+  function normQ(q) {
+    const choices = (q.choices || []).map((c) => String(c));
+    const type = q.type === 'short' || q.type === 'mcq' ? q.type : (choices.filter((c) => c.trim()).length >= 2 ? 'mcq' : 'short');
+    return {
+      type,
+      question: q.question || '',
+      choices: type === 'mcq' && choices.length < 2 ? ['', ''] : choices,
+      answer: typeof q.answer === 'number' ? q.answer : -1,
+      accepted: Array.isArray(q.accepted) ? q.accepted.slice() : [],
+      keywordMode: q.keywordMode === 'all' ? 'all' : 'any',
+      modelAnswer: q.modelAnswer || '',
+      explanation: q.explanation || '',
+    };
+  }
+  const hasKey = (q) => (q.type === 'short' ? q.accepted.length > 0 || !!q.modelAnswer.trim() : q.answer >= 0);
+  const isAnswered = (s, i) => (s.questions[i].type === 'short' ? String(s.answers[i] || '').trim() !== '' : s.answers[i] >= 0);
+  const countUnanswered = (s) => s.questions.filter((_, i) => !isAnswered(s, i)).length;
+
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -559,7 +654,7 @@ JSON
   const SAMPLE = `General Knowledge Practice Quiz
 Name: ______________   Date: __________
 
-Directions: Choose the best answer for each question. You have 15 minutes.
+Directions: Answer every question. Multiple-choice questions have one correct option. Short-answer questions need a word or a sentence or two. You have 15 minutes.
 
 1. What is the chemical symbol for gold?
 A) Ag
@@ -567,6 +662,7 @@ B) Au
 C) Gd
 D) Go
 Answer: B
+Explanation: Au comes from aurum, the Latin word for gold. Ag is silver.
 
 2. Which planet is known as the Red Planet?
 A) Venus
@@ -574,44 +670,50 @@ B) Jupiter
 C) Mars
 D) Mercury
 Answer: C
+Explanation: Iron oxide (rust) in the soil gives Mars its reddish colour.
 
 3. What is the value of 7 × 8?
 A) 54  B) 56  C) 64  D) 58
 Answer: B
+Explanation: 7 × 7 = 49, plus one more 7 makes 56.
 
 4. Who wrote "Pride and Prejudice"?
 A) Charlotte Brontë
 B) Mary Shelley
 *C) Jane Austen
 D) George Eliot
+Explanation: Jane Austen published it in 1813.
 
 Page 1 of 2
 
-5. The mitochondria is often called the ___ of the cell.
-A) nucleus
-B) powerhouse
-C) membrane
-D) library
-Answer: powerhouse
-
-6. True or False: Light travels faster than sound.
-A) True
-B) False
-Answer: A
-
-7. Which data structure follows First-In, First-Out (FIFO) order?
+5. Which data structure serves items in First-In, First-Out (FIFO) order?
 A) Stack
 B) Queue
 C) Binary tree
 D) Hash map
 Answer: B
+Explanation: A queue serves items in arrival order. A stack is Last-In, First-Out.
 
-8. In what year did the first crewed Moon landing happen?
-A) 1965
-B) 1969
-C) 1972
-D) 1959
-Answer: B`;
+6. The mitochondria is often called the ___ of the cell.
+Type: short
+Keywords: powerhouse; power house; power plant
+Model answer: Powerhouse
+Explanation: Mitochondria make most of the cell's ATP through cellular respiration.
+
+7. At sea level, water boils at how many degrees Celsius?
+Answer: 100; one hundred
+Model answer: 100 °C
+Explanation: At 1 atmosphere of pressure, pure water boils at 100 °C.
+
+8. Name the two gases that make up most of Earth's atmosphere.
+Keywords: nitrogen; oxygen
+Match: all
+Model answer: Nitrogen (about 78%) and oxygen (about 21%).
+
+9. In one or two sentences, explain why the Moon has phases.
+Model answer: As the Moon orbits Earth, we see different amounts of its sunlit half, so the lit part seems to grow and shrink over about a month.
+Explanation: Earth's shadow is not involved. That only happens during a lunar eclipse.`;
+
 
   /* ---------------------------------------------------------------
    * Parsing
@@ -646,7 +748,7 @@ Answer: B`;
   function normalizeText(t) {
     t = t.replace(/\r\n?/g, '\n').replace(/ /g, ' ').replace(/\t/g, ' ');
     // Answer lines glued onto the previous line (common in PDF extraction)
-    t = t.replace(/([^\n])[ ]+((?:correct\s+answer|answer|ans)\s*[:=\-–])/gi, '$1\n$2');
+    t = t.replace(/([^\n])(?<!\b(?:model|ideal|sample|expected|correct|accepted|acceptable))[ ]+((?:correct\s+answer|answer|ans)\s*[:=\-–])/gi, '$1\n$2');
     // A new numbered question glued after an "Answer: X"
     t = t.replace(/((?:answer|ans)\s*[:=\-–]\s*\(?[A-Pa-p]\)?)[ ]+(?=(?:Q(?:uestion)?\s*)?\d{1,3}\s*[.)]\s)/gi, '$1\n');
     // Inline choices "A. foo B. bar" only on lines that already start with a choice
@@ -694,6 +796,12 @@ Answer: B`;
     const reQ = /^(?:Q(?:uestion)?\s*)?(\d{1,3})\s*[.):]\s*(.+)$/i;
     const reAns = /^(?:correct\s+answer|correct|answer\s*key|answer|ans|key)\s*[:=\-–]\s*(.+)$/i;
     const reChoice = /^(\*)?\s*\(?([A-Pa-p])\s*[).\]:]\s*(.+)$/;
+    const reExpl = /^(?:explanation|rationale|reason|why|feedback)\s*[:=\-–]\s*(.+)$/i;
+    const reKw = /^(?:keywords?|accepted(?:\s+answers?)?|acceptable(?:\s+answers?)?)\s*[:=\-–]\s*(.+)$/i;
+    const reModel = /^(?:model|ideal|sample|expected)\s+answer\s*[:=\-–]\s*(.+)$/i;
+    const reMatch = /^match(?:ing)?\s*[:=\-–]\s*(any|all)\b/i;
+    const reType = /^(?:type|question\s+type|format)\s*[:=\-–]\s*(short(?:[\s-]*answer)?|sa|written|open|mcq|mc|multiple[\s-]*choice)\b/i;
+    const reTag = /^[\[(](short(?:[\s-]*answer)?|sa|mcq|multiple[\s-]*choice)[\])]\s*/i;
 
     // A trailing "Answer Key" section: lift it out and use it as the key
     let keyEntries = null;
@@ -708,28 +816,47 @@ Answer: B`;
 
     const finish = () => {
       if (!cur) return;
-      cur.question = cur.question.trim();
-      cur.choices = cur.choices.map((c) => c.trim()).filter(Boolean);
-      if (cur.answerRaw != null && cur.answer === -1) {
-        cur.answer = resolveAnswer(cur.answerRaw, cur.choices, { numberIsZeroBased: false });
-      }
-      delete cur.answerRaw;
-      // Text with no choices before the first real question is a cover/intro page
-      if (cur.choices.length < 2 && !qs.some((q) => q.choices.length >= 2)) {
-        const t = [cur.question, ...cur.choices].filter(Boolean).join('\n');
-        if (t) introParts.push(t);
-      } else if (cur.question || cur.choices.length) {
-        qs.push(cur);
-      }
+      const q = cur;
       cur = null;
+      q.question = q.question.trim();
+      q.choices = q.choices.map((c) => c.trim()).filter(Boolean);
+      const isMcq = q.type ? q.type === 'mcq' : q.choices.length >= 2;
+      q.type = isMcq ? 'mcq' : 'short';
+      if (isMcq) {
+        if (q.answerRaw != null && q.answer === -1) q.answer = resolveAnswer(q.answerRaw, q.choices, { numberIsZeroBased: false });
+      } else {
+        q.choices = [];
+        if (q.answerRaw != null) {
+          if (!q.accepted.length) q.accepted = splitAccepted(q.answerRaw);
+          if (!q.modelAnswer) q.modelAnswer = q.answerRaw;
+        }
+      }
+      q.explanation = q.explanation.trim();
+      q.modelAnswer = q.modelAnswer.trim();
+      delete q.answerRaw; delete q.lastField;
+      const attached = q.answer >= 0 || q.accepted.length || q.modelAnswer || q.explanation;
+      // Un-numbered, untagged text with nothing attached, before any question: cover / intro
+      if (!isMcq && !q.numbered && !q.typed && !attached && !qs.length) {
+        if (q.question) introParts.push(q.question);
+        return;
+      }
+      if (q.question || q.choices.length) qs.push(q);
     };
-    const start = (q) => { finish(); cur = { question: q, choices: [], answer: -1, answerRaw: null }; };
+    const start = (text, num) => {
+      finish();
+      let typed = null;
+      const t = text.match(reTag);
+      if (t) { typed = /^(?:mcq|multiple)/i.test(t[1]) ? 'mcq' : 'short'; text = text.slice(t[0].length); }
+      cur = { question: text, choices: [], answer: -1, answerRaw: null, accepted: [], keywordMode: 'any', modelAnswer: '', explanation: '',
+        type: typed, typed: !!typed, numbered: num != null, num: num ?? null, lastField: null };
+    };
 
     let blankSeen = false, inDirections = false;
     for (const line of lines) {
       if (!line) {
         blankSeen = true;
         if (inDirections && !hasNumbered) inDirections = false;
+        if (cur) cur.lastField = null;
         continue;
       }
       const afterBlank = blankSeen;
@@ -743,11 +870,20 @@ Answer: B`;
         else { introParts.push(line); continue; }
       }
 
+      if (cur) {
+        let m;
+        if ((m = line.match(reExpl))) { cur.explanation = m[1]; cur.lastField = 'explanation'; continue; }
+        if ((m = line.match(reKw))) { cur.accepted = splitAccepted(m[1]); cur.lastField = null; continue; }
+        if ((m = line.match(reModel))) { cur.modelAnswer = m[1]; cur.lastField = 'model'; continue; }
+        if ((m = line.match(reMatch))) { cur.keywordMode = m[1].toLowerCase(); continue; }
+        if ((m = line.match(reType))) { cur.type = /^(?:mcq|mc|multiple)/i.test(m[1]) ? 'mcq' : 'short'; cur.typed = true; continue; }
+      }
+
       const mAns = line.match(reAns);
-      if (mAns && cur) { cur.answerRaw = mAns[1].trim(); continue; }
+      if (mAns && cur) { cur.answerRaw = mAns[1].trim(); cur.lastField = null; continue; }
 
       const mC = line.match(reChoice);
-      if (mC && cur) {
+      if (mC && cur && cur.type !== 'short') {
         const idx = LETTERS.indexOf(mC[2].toUpperCase());
         // Only accept choices in sequence (A, then B, ...) to avoid false positives
         if (idx === cur.choices.length) {
@@ -758,17 +894,22 @@ Answer: B`;
             txt = txt.replace(/\s*(\*|\((?:correct|✓)\))\s*$/i, '');
           }
           cur.choices.push(txt);
+          cur.lastField = null;
           if (starred) cur.answer = idx;
           continue;
         }
       }
 
       const mQ = line.match(reQ);
-      if (mQ) { start(mQ[2]); continue; }
+      if (mQ) { start(mQ[2], parseInt(mQ[1], 10)); continue; }
+
+      // Multi-line explanation / model answer
+      if (cur && cur.lastField === 'explanation') { cur.explanation += ' ' + line; continue; }
+      if (cur && cur.lastField === 'model') { cur.modelAnswer += '\n' + line; continue; }
 
       // Continuation / un-numbered question
       if (!cur || cur.answerRaw != null || (cur.answer !== -1 && cur.choices.length >= 2)) {
-        start(line);
+        start(line, null);
       } else if (cur.choices.length === 0) {
         // Un-numbered test: a paragraph break before the first question ends the intro
         if (afterBlank && !hasNumbered && !qs.length) { introParts.push(cur.question); cur.question = line; }
@@ -778,10 +919,34 @@ Answer: B`;
       }
     }
     finish();
+
+    // Numbered items before the first multiple-choice question that carry nothing and whose
+    // numbering restarts there (e.g. "1. Use a pencil … 1. What is…") are instructions.
+    const firstMcq = qs.findIndex((q) => q.type === 'mcq');
+    if (firstMcq > 0) {
+      const restartAt = qs[firstMcq].num;
+      let k = 0;
+      while (k < firstMcq) {
+        const q = qs[k];
+        const bare = !q.typed && !q.accepted.length && !q.modelAnswer && !q.explanation;
+        if (!bare || (q.num != null && (restartAt == null || q.num < restartAt))) break;
+        k++;
+      }
+      if (k) introParts.push(...qs.splice(0, k).map((q) => q.question));
+    }
+
     if (keyEntries) {
       qs.forEach((q, i) => {
         const e = keyEntries[i];
-        if (e && q.answer < 0) q.answer = resolveAnswer(e.v, q.choices, { numberIsZeroBased: e.zb });
+        if (!e) return;
+        if (q.type === 'short') {
+          if (!q.accepted.length && String(e.v ?? '').trim()) {
+            q.accepted = splitAccepted(String(e.v));
+            q.modelAnswer = q.modelAnswer || String(e.v).trim();
+          }
+        } else if (q.answer < 0) {
+          q.answer = resolveAnswer(e.v, q.choices, { numberIsZeroBased: e.zb });
+        }
       });
     }
     qs.intro = introParts.join('\n').trim();
@@ -834,7 +999,19 @@ Answer: B`;
           }
         }
         const ans = pick(row, [/^(answer|correct|correct\s*_?answer|key|solution)$/]);
-        qs.push({ question: String(question).trim(), choices, answer: resolveAnswer(ans, choices, { numberIsZeroBased: false }) });
+        const typeRaw = String(pick(row, [/^(type|question\s*_?type|kind|format)$/]) || '').toLowerCase();
+        const kw = pick(row, [/^(keywords?|accepted(\s*_?answers?)?|acceptable(\s*_?answers?)?)$/]);
+        const model = pick(row, [/^((model|ideal|sample|expected)\s*_?answer)$/]);
+        const expl = String(pick(row, [/^(explanation|rationale|feedback|reason)$/]) || '').trim();
+        const match = String(pick(row, [/^(match|keyword\s*_?(mode|rule))$/]) || '').toLowerCase();
+        const isShort = /short|written|open|^sa$|text/.test(typeRaw) || (!/mc|multiple|choice/.test(typeRaw) && choices.length < 2);
+        if (isShort) {
+          qs.push({ type: 'short', question: String(question).trim(), choices: [], answer: -1,
+            accepted: splitAccepted(kw != null && String(kw).trim() ? kw : (ans ?? '')),
+            keywordMode: match === 'all' ? 'all' : 'any', modelAnswer: String(model ?? ans ?? '').trim(), explanation: expl });
+        } else {
+          qs.push({ type: 'mcq', question: String(question).trim(), choices, answer: resolveAnswer(ans, choices, { numberIsZeroBased: false }), explanation: expl });
+        }
       }
     } else {
       // Positional: question, choice..., answer
@@ -861,7 +1038,18 @@ Answer: B`;
       }
       choices = choices.map((c) => (typeof c === 'object' && c !== null ? (c.text ?? c.label ?? JSON.stringify(c)) : String(c)));
       const raw = item.answer ?? item.correct ?? item.correctAnswer ?? item.correct_answer ?? item.key;
-      return { question: String(question).trim(), choices, answer: resolveAnswer(raw, choices, { numberIsZeroBased: true }) };
+      const typeRaw = String(item.type ?? item.kind ?? '').toLowerCase();
+      const explanation = String(item.explanation ?? item.rationale ?? item.feedback ?? '').trim();
+      const isShort = /short|written|open|text/.test(typeRaw) || (!/mc|multiple|choice/.test(typeRaw) && choices.length < 2);
+      if (isShort) {
+        const kw = item.keywords ?? item.accepted ?? item.acceptedAnswers ?? item.accepted_answers ?? item.acceptable;
+        const model = item.modelAnswer ?? item.model_answer ?? item.sampleAnswer ?? item.idealAnswer ?? (typeof raw === 'string' ? raw : '');
+        return { type: 'short', question: String(question).trim(), choices: [], answer: -1,
+          accepted: splitAccepted(kw ?? (raw == null ? '' : raw)),
+          keywordMode: String(item.match ?? item.keywordMode ?? '').toLowerCase() === 'all' ? 'all' : 'any',
+          modelAnswer: String(model ?? '').trim(), explanation };
+      }
+      return { type: 'mcq', question: String(question).trim(), choices, answer: resolveAnswer(raw, choices, { numberIsZeroBased: true }), explanation };
     });
   }
 
@@ -1033,30 +1221,42 @@ Answer: B`;
    * Answers found inside the question file become the hidden key
    * ------------------------------------------------------------- */
   function questionsToText(qs) {
-    return qs.map((q, i) => `${i + 1}. ${q.question}\n` + q.choices.map((c, ci) => `${LETTERS[ci]}) ${c}`).join('\n')).join('\n\n');
+    return qs.map((q, i) => (q.type === 'short'
+      ? `${i + 1}. ${q.question}\nType: short`
+      : `${i + 1}. ${q.question}\n` + q.choices.map((c, ci) => `${LETTERS[ci]}) ${c}`).join('\n'))).join('\n\n');
   }
 
   // Parses → detects embedded answers → moves them into the key and strips them from view.
   // Returns how many answers were detected.
   // fresh = a newly loaded test (file or sample), not a re-parse of the edited text box
   function ingestQuestions(qs, source, fresh) {
-    const found = qs.filter((q) => q.answer >= 0).length;
-    if (qs.intro) state.intro = qs.intro;
+    const intro = qs.intro;
+    qs = qs.map(normQ);
+    const found = qs.filter(hasKey).length;
+    const keyed = qs.filter((q) => hasKey(q) || q.explanation).length;
+    if (intro) state.intro = intro;
     else if (fresh) state.intro = '';
-    if (fresh && !found) {
+    if (fresh && !keyed) {
       // Detected answers belonged to the previous test
       if (state.key && state.key.detected) state.key = null;
       state.detectedKey = null;
       if (!state.key) setStatus($('keyStatus'), '');
     }
-    if (found) {
+    if (keyed) {
       const entries = {};
-      qs.forEach((q, i) => { if (q.answer >= 0) entries[i] = { v: q.answer, zb: true }; });
+      qs.forEach((q, i) => {
+        if (!hasKey(q) && !q.explanation) return;
+        const e = {};
+        if (q.explanation) e.explanation = q.explanation;
+        if (q.type === 'mcq' && q.answer >= 0) { e.v = q.answer; e.zb = true; }
+        if (q.type === 'short' && hasKey(q)) e.short = { accepted: q.accepted.slice(), keywordMode: q.keywordMode, modelAnswer: q.modelAnswer };
+        entries[i] = e;
+      });
       state.detectedKey = { entries, count: found, source, detected: true };
       // A separately uploaded key takes priority; otherwise use the detected one
       if (!state.key || state.key.detected) state.key = state.detectedKey;
-      qs = qs.map((q) => ({ ...q, answer: -1 }));
-      $('rawText').value = questionsToText(qs);   // answer lines and * markers removed
+      qs = qs.map((q) => ({ ...q, answer: -1, accepted: [], modelAnswer: '', explanation: '' }));
+      $('rawText').value = questionsToText(qs);   // answers, keywords and explanations removed
       state.hideAnswers = true;
       $('hideAnswers').checked = true;
     }
@@ -1073,11 +1273,7 @@ Answer: B`;
   }
 
   function setQuestions(qs) {
-    state.questions = qs.map((q) => ({
-      question: q.question || '',
-      choices: q.choices && q.choices.length ? q.choices.slice() : ['', ''],
-      answer: typeof q.answer === 'number' ? q.answer : -1,
-    }));
+    state.questions = qs.map(normQ);
     refreshKey();
   }
 
@@ -1096,15 +1292,27 @@ Answer: B`;
 
   function updateCount() {
     const n = state.questions.length;
-    const missing = state.questions.filter((q) => q.answer < 0).length;
-    $('qCount').textContent = `${n} question${n === 1 ? '' : 's'}` + (missing ? ` · ${missing} without answer` : '');
+    const missing = state.questions.filter((q) => !hasKey(q)).length;
+    const nm = state.questions.filter((q) => q.type === 'mcq').length;
+    const ns = n - nm;
+    $('qCount').textContent = `${n} question${n === 1 ? '' : 's'}` + (n ? ` · ${nm} MCQ · ${ns} short` : '') + (missing ? ` · ${missing} without answer` : '');
     $('qCount').className = 'badge ' + (missing ? 'warn' : n ? 'good' : 'muted');
+    const opts = $('testMode').options;
+    opts[0].textContent = `Mixed: all questions (${n})`;
+    opts[1].textContent = `Multiple choice only (${nm})`;
+    opts[2].textContent = `Short answer only (${ns})`;
   }
 
   function answerBadgeText(q) {
-    if (q.answer < 0) return 'No correct answer set';
-    return state.hideAnswers ? 'Answer set · hidden' : 'Answer: ' + LETTERS[q.answer];
+    if (!hasKey(q)) return q.type === 'short' ? 'No answer set · self-graded' : 'No correct answer set';
+    if (state.hideAnswers) return 'Answer set · hidden';
+    if (q.type === 'short') {
+      return q.accepted.length ? `Accepts ${q.keywordMode === 'all' ? 'all of' : 'any of'}: ${q.accepted.join(', ')}` : 'Self-graded against model answer';
+    }
+    return 'Answer: ' + LETTERS[q.answer];
   }
+
+  const field = (label, control) => el('label', { class: 'field' }, el('span', { text: label }), control);
 
   function renderEditor() {
     const root = $('editor');
@@ -1129,66 +1337,107 @@ Answer: B`;
           el('span', { class: 'spacer' }),
           el('button', { class: 'small danger', onclick: () => { state.intro = ''; renderEditor(); } }, 'Discard'))));
     }
-    if (state.hideAnswers) root.append(el('p', { class: 'hidden-note', text: 'Correct answers are hidden until you submit. Untick "Hide correct answers" to see or change them.' }));
+    if (state.hideAnswers) root.append(el('p', { class: 'hidden-note', text: 'Correct answers, keywords, model answers and explanations are hidden until you submit. Untick "Hide correct answers" to see or change them.' }));
+
     state.questions.forEach((q, qi) => {
-      const card = el('div', { class: 'q-edit' + (q.answer < 0 ? ' missing' : '') });
-      const badge = el('span', { class: 'badge ' + (q.answer < 0 ? 'warn' : 'good'), text: answerBadgeText(q) });
+      const card = el('div', { class: 'q-edit' + (hasKey(q) ? '' : ' missing') });
+      const badge = el('span', { class: 'badge ' + (hasKey(q) ? 'good' : 'warn') });
       const refreshBadge = () => {
-        card.classList.toggle('missing', q.answer < 0);
-        badge.className = 'badge ' + (q.answer < 0 ? 'warn' : 'good');
-        badge.textContent = answerBadgeText(q);
+        card.classList.toggle('missing', !hasKey(q));
+        badge.className = 'badge ' + (hasKey(q) ? 'good' : 'warn');
+        badge.textContent = badge.title = answerBadgeText(q);
         updateCount();
       };
+      refreshBadge();
+      const typeSel = el('select', { class: 'type-select', id: `q-${qi}-type`, 'aria-label': `Question ${qi + 1} type` },
+        el('option', { value: 'mcq', text: 'Multiple choice' }),
+        el('option', { value: 'short', text: 'Short answer' }));
+      typeSel.value = q.type;
+      typeSel.addEventListener('change', () => {
+        q.type = typeSel.value;
+        if (q.type === 'mcq' && q.choices.length < 2) q.choices = ['', '', '', ''];
+        renderEditor();
+        $(`q-${qi}-type`)?.focus();
+      });
       card.append(el('div', { class: 'head' },
-        el('span', { class: 'num', text: `Q${qi + 1}` }), badge, el('span', { class: 'spacer' }),
-        el('button', { class: 'small', title: 'Move up', disabled: qi === 0, onclick: () => { [state.questions[qi - 1], state.questions[qi]] = [state.questions[qi], state.questions[qi - 1]]; renderEditor(); } }, '↑'),
-        el('button', { class: 'small', title: 'Move down', disabled: qi === state.questions.length - 1, onclick: () => { [state.questions[qi + 1], state.questions[qi]] = [state.questions[qi], state.questions[qi + 1]]; renderEditor(); } }, '↓'),
-        el('button', { class: 'small danger', onclick: () => { state.questions.splice(qi, 1); renderEditor(); } }, 'Delete')
+        el('span', { class: 'num', text: `Q${qi + 1}` }), typeSel, badge, el('span', { class: 'spacer' }),
+        el('button', { class: 'small', title: 'Move up', 'aria-label': `Move question ${qi + 1} up`, disabled: qi === 0, onclick: () => { [state.questions[qi - 1], state.questions[qi]] = [state.questions[qi], state.questions[qi - 1]]; renderEditor(); } }, '↑'),
+        el('button', { class: 'small', title: 'Move down', 'aria-label': `Move question ${qi + 1} down`, disabled: qi === state.questions.length - 1, onclick: () => { [state.questions[qi + 1], state.questions[qi]] = [state.questions[qi], state.questions[qi + 1]]; renderEditor(); } }, '↓'),
+        el('button', { class: 'small danger', 'aria-label': `Delete question ${qi + 1}`, onclick: () => { state.questions.splice(qi, 1); renderEditor(); } }, 'Delete')
       ));
-      const ta = el('textarea', { rows: 2, 'aria-label': `Question ${qi + 1} text` });
+      const ta = el('textarea', { rows: 2, id: `q-${qi}-text`, 'aria-label': `Question ${qi + 1} text` });
       ta.value = q.question;
       ta.addEventListener('input', () => { q.question = ta.value; });
       card.append(ta);
 
-      q.choices.forEach((c, ci) => {
-        const row = el('div', { class: 'choice-edit' + (q.answer === ci && !state.hideAnswers ? ' is-correct' : '') });
-        const radio = el('input', { type: 'radio', name: `correct-${qi}`, title: 'Mark as correct answer', 'aria-label': `Mark choice ${LETTERS[ci]} correct` });
-        radio.checked = q.answer === ci && !state.hideAnswers;
-        radio.hidden = state.hideAnswers;
-        radio.addEventListener('change', () => {
-          q.answer = ci;
-          card.querySelectorAll('.choice-edit').forEach((r, i) => r.classList.toggle('is-correct', i === ci));
-          refreshBadge();
+      if (q.type === 'mcq') {
+        q.choices.forEach((c, ci) => {
+          const row = el('div', { class: 'choice-edit' + (q.answer === ci && !state.hideAnswers ? ' is-correct' : '') });
+          const radio = el('input', { type: 'radio', name: `correct-${qi}`, title: 'Mark as correct answer', 'aria-label': `Mark choice ${LETTERS[ci]} correct` });
+          radio.checked = q.answer === ci && !state.hideAnswers;
+          radio.hidden = state.hideAnswers;
+          radio.addEventListener('change', () => {
+            q.answer = ci;
+            card.querySelectorAll('.choice-edit').forEach((r, i) => r.classList.toggle('is-correct', i === ci));
+            refreshBadge();
+          });
+          const input = el('input', { type: 'text', id: `q-${qi}-c${ci}`, 'aria-label': `Choice ${LETTERS[ci]}` });
+          input.value = c;
+          input.addEventListener('input', () => { q.choices[ci] = input.value; });
+          row.append(
+            el('span', { class: 'letter', text: LETTERS[ci] }),
+            input,
+            el('span', { class: 'row', style: 'gap:6px;flex-wrap:nowrap' }, radio,
+              el('button', { class: 'small danger', title: 'Remove choice', 'aria-label': `Remove choice ${LETTERS[ci]}`, disabled: q.choices.length <= 2, onclick: () => {
+                q.choices.splice(ci, 1);
+                if (q.answer === ci) q.answer = -1; else if (q.answer > ci) q.answer--;
+                renderEditor();
+              } }, '✕'))
+          );
+          card.append(row);
         });
-        const input = el('input', { type: 'text', 'aria-label': `Choice ${LETTERS[ci]}` });
-        input.value = c;
-        input.addEventListener('input', () => { q.choices[ci] = input.value; });
-        row.append(
-          el('span', { class: 'letter', text: LETTERS[ci] }),
-          input,
-          el('span', { class: 'row', style: 'gap:6px;flex-wrap:nowrap' }, radio,
-            el('button', { class: 'small danger', title: 'Remove choice', disabled: q.choices.length <= 2, onclick: () => {
-              q.choices.splice(ci, 1);
-              if (q.answer === ci) q.answer = -1; else if (q.answer > ci) q.answer--;
-              renderEditor();
-            } }, '✕'))
-        );
-        card.append(row);
-      });
-      if (q.choices.length < LETTERS.length) {
-        card.append(el('div', { style: 'margin-top:8px' },
-          el('button', { class: 'small', onclick: () => { q.choices.push(''); renderEditor(); } }, '+ Add choice')));
+        if (q.choices.length < LETTERS.length) {
+          card.append(el('div', { style: 'margin-top:8px' },
+            el('button', { class: 'small', onclick: () => { q.choices.push(''); renderEditor(); } }, '+ Add choice')));
+        }
+      } else if (state.hideAnswers) {
+        card.append(el('p', { class: 'note', style: 'margin:8px 0 0', text: 'Short answer · accepted answers and model answer are hidden.' }));
+      } else {
+        const kw = el('input', { type: 'text', id: `q-${qi}-kw`, placeholder: 'e.g. mitochondria; mitochondrion' });
+        kw.value = q.accepted.join('; ');
+        kw.addEventListener('input', () => { q.accepted = splitAccepted(kw.value); refreshBadge(); });
+        const mode = el('select', { id: `q-${qi}-match` },
+          el('option', { value: 'any', text: 'Any one must appear' }),
+          el('option', { value: 'all', text: 'All must appear' }));
+        mode.value = q.keywordMode;
+        mode.addEventListener('change', () => { q.keywordMode = mode.value; refreshBadge(); });
+        const model = el('textarea', { rows: 2, id: `q-${qi}-model`, placeholder: 'The ideal answer, shown after you submit' });
+        model.value = q.modelAnswer;
+        model.addEventListener('input', () => { q.modelAnswer = model.value; refreshBadge(); });
+        card.append(el('div', { class: 'sa-edit' },
+          el('div', { class: 'row2' }, field('Accepted answers or keywords (separate with ;)', kw), field('Keyword rule', mode)),
+          field('Model answer', model),
+          el('p', { class: 'note', style: 'margin:0', text: 'With keywords, answers are graded automatically (capitals and punctuation ignored) and you can override the grade on the results page. Without keywords, you grade yourself against the model answer.' })));
+      }
+      if (!state.hideAnswers) {
+        const ex = el('textarea', { rows: 2, id: `q-${qi}-expl`, placeholder: 'Optional: why the answer is right (shown after you submit)' });
+        ex.value = q.explanation;
+        ex.addEventListener('input', () => { q.explanation = ex.value; });
+        card.append(el('div', { class: 'sa-edit' }, field('Explanation', ex)));
       }
       root.append(card);
     });
   }
 
-  $('addQBtn').addEventListener('click', () => {
-    state.questions.push({ question: '', choices: ['', '', '', ''], answer: -1 });
+  function addQuestion(type) {
+    state.questions.push(normQ(type === 'short'
+      ? { type: 'short', question: '', accepted: [], modelAnswer: '' }
+      : { type: 'mcq', question: '', choices: ['', '', '', ''], answer: -1 }));
     renderEditor();
-    const cards = $('editor').querySelectorAll('.q-edit textarea');
-    cards[cards.length - 1]?.focus();
-  });
+    $(`q-${state.questions.length - 1}-text`)?.focus();
+  }
+  $('addQBtn').addEventListener('click', () => addQuestion('mcq'));
+  $('addSaBtn').addEventListener('click', () => addQuestion('short'));
 
   /* ---------------------------------------------------------------
    * Answer key (kept hidden until the results screen)
@@ -1236,15 +1485,35 @@ Answer: B`;
     return entries;
   }
 
+  function restoreOriginal(q) {
+    if (q._orig === undefined) return;
+    Object.assign(q, q._orig);
+    delete q._orig;
+  }
+
   function applyKeyToQuestions() {
     const out = { applied: 0, unresolved: [], extra: 0 };
     if (!state.key) return out;
     state.questions.forEach((q, i) => {
       const e = state.key.entries[i];
       if (!e) return;
+      if (q._orig === undefined) {
+        q._orig = { answer: q.answer, accepted: q.accepted.slice(), keywordMode: q.keywordMode, modelAnswer: q.modelAnswer, explanation: q.explanation };
+      }
+      if (e.explanation) q.explanation = e.explanation;
+      if (q.type === 'short') {
+        if (e.short) {
+          q.accepted = e.short.accepted.slice(); q.keywordMode = e.short.keywordMode; q.modelAnswer = e.short.modelAnswer;
+          out.applied++;
+        } else if (e.v != null && String(e.v).trim()) {
+          q.accepted = splitAccepted(String(e.v)); q.modelAnswer = String(e.v).trim();
+          out.applied++;
+        }
+        return;
+      }
+      if (e.v == null) return;
       const idx = resolveAnswer(e.v, q.choices, { numberIsZeroBased: e.zb });
       if (idx < 0) { out.unresolved.push(i + 1); return; }
-      if (q._orig === undefined) q._orig = q.answer;
       q.answer = idx;
       out.applied++;
     });
@@ -1293,7 +1562,7 @@ Answer: B`;
       return false;
     }
     // Restore answers from a previous key before applying a new one
-    state.questions.forEach((q) => { if (q._orig !== undefined) { q.answer = q._orig; delete q._orig; } });
+    state.questions.forEach(restoreOriginal);
     state.key = { entries, count, source };
     state.hideAnswers = true;
     $('hideAnswers').checked = true;
@@ -1334,7 +1603,7 @@ Answer: B`;
     }
   });
   $('keyRemove').addEventListener('click', () => {
-    state.questions.forEach((q) => { if (q._orig !== undefined) { q.answer = q._orig; delete q._orig; } });
+    state.questions.forEach(restoreOriginal);
     if (state.key && state.key.detected) {
       state.key = null; state.detectedKey = null;
       setStatus($('keyStatus'), 'Detected answers removed. These questions have no answer key now.', 'ok');
@@ -1551,17 +1820,26 @@ Queue = FIFO · Stack = LIFO`;
    * ------------------------------------------------------------- */
   $('startBtn').addEventListener('click', () => {
     const st = $('startStatus');
-    const qs = state.questions
-      .map((q) => ({ question: q.question.trim(), choices: q.choices.map((c) => c.trim()), answer: q.answer }))
-      .map((q) => {
-        // drop empty choices, remap answer
-        const keep = q.choices.map((c, i) => [c, i]).filter(([c]) => c !== '');
-        const answer = keep.findIndex(([, i]) => i === q.answer);
-        return { question: q.question, choices: keep.map(([c]) => c), answer };
-      });
-    if (!qs.length) { setStatus(st, 'Add at least one question first (try "Load sample test").', 'err'); return; }
-    const bad = qs.findIndex((q) => !q.question || q.choices.length < 2);
-    if (bad !== -1) { setStatus(st, `Question ${bad + 1} needs text and at least two non-empty choices.`, 'err'); return; }
+    const prepared = state.questions.map((q) => {
+      const base = { type: q.type, question: q.question.trim(), explanation: (q.explanation || '').trim() };
+      if (q.type === 'short') {
+        return { ...base, choices: [], answer: -1, accepted: q.accepted.map((a) => a.trim()).filter(Boolean), keywordMode: q.keywordMode, modelAnswer: (q.modelAnswer || '').trim() };
+      }
+      // drop empty choices, remap answer
+      const keep = q.choices.map((c, i) => [c.trim(), i]).filter(([c]) => c !== '');
+      return { ...base, choices: keep.map(([c]) => c), answer: keep.findIndex(([, i]) => i === q.answer), accepted: [], keywordMode: 'any', modelAnswer: '' };
+    });
+    if (!prepared.length) { setStatus(st, 'Add at least one question first (try "Load sample test").', 'err'); return; }
+    const bad = prepared.findIndex((q) => !q.question || (q.type === 'mcq' && q.choices.length < 2));
+    if (bad !== -1) {
+      setStatus(st, prepared[bad].question
+        ? `Question ${bad + 1} is multiple choice but has fewer than two choices. Add choices or switch it to short answer.`
+        : `Question ${bad + 1} has no question text.`, 'err');
+      return;
+    }
+    const mode = $('testMode').value;
+    const qs = mode === 'all' ? prepared : prepared.filter((q) => q.type === mode);
+    if (!qs.length) { setStatus(st, `This test has no ${mode === 'mcq' ? 'multiple-choice' : 'short-answer'} questions. Choose another option under "Question types".`, 'err'); return; }
     const minutes = parseFloat($('duration').value);
     if (!(minutes > 0)) { setStatus(st, 'Set a test duration greater than 0 minutes.', 'err'); return; }
     setStatus(st, '');
@@ -1587,7 +1865,10 @@ Queue = FIFO · Stack = LIFO`;
     state.session = {
       questions,
       minutes,
-      answers: new Array(questions.length).fill(-1),
+      answers: questions.map((q) => (q.type === 'short' ? '' : -1)),
+      layout: $('layoutMode').value,
+      current: 0,
+      overrides: {},
       startTime: now,
       endTime: now + minutes * 60000,
       violations: [],
@@ -1616,30 +1897,118 @@ Queue = FIFO · Stack = LIFO`;
 
   function renderTest() {
     const s = state.session;
+    const single = s.layout === 'single';
     const wrap = $('questionsWrap');
     wrap.innerHTML = '';
     if (state.intro && state.showIntro) {
       wrap.append(el('details', { class: 'q-card intro-card', open: true },
         el('summary', {}, 'Instructions'), el('div', { class: 'intro-text', text: state.intro })));
     }
+
+    // Question navigator: one bubble per question, filled once answered
+    const pal = el('div', { class: 'palette', role: 'navigation', 'aria-label': 'Question navigator' });
+    s.questions.forEach((q, qi) => pal.append(el('button', { type: 'button', class: 'pal-btn', id: `pal-${qi}`, onclick: () => goTo(qi, true) }, String(qi + 1))));
+    wrap.append(el('div', { class: 'palette-wrap' }, pal,
+      el('p', { class: 'note', style: 'margin:0', text: single
+        ? 'Move with Previous / Next or the N and P keys. Press A–D to pick an option.'
+        : 'Click a number to jump to that question. Filled bubbles are answered.' })));
+
     s.questions.forEach((q, qi) => {
-      const card = el('div', { class: 'q-card', id: `q-${qi}` });
-      card.append(el('div', { class: 'qtext' }, el('span', { class: 'n', text: `${qi + 1}.` }), q.question));
-      const group = el('div', { role: 'radiogroup', 'aria-label': `Question ${qi + 1}` });
-      q.choices.forEach((c, ci) => {
-        const input = el('input', { type: 'radio', name: `ans-${qi}`, value: ci });
-        const label = el('label', { class: 'opt' }, input, el('span', { class: 'l', text: LETTERS[ci] }), el('span', { text: c }));
-        input.addEventListener('change', () => {
-          s.answers[qi] = ci;
-          group.querySelectorAll('.opt').forEach((o, i) => o.classList.toggle('sel', i === ci));
-          updateHeader();
+      const card = el('section', { class: 'q-card', id: `q-${qi}`, tabindex: '-1', 'aria-labelledby': `qt-${qi}`, 'data-type': q.type });
+      card.append(el('div', { class: 'qtext' },
+        el('span', { class: 'n', text: `${qi + 1}.` }),
+        el('span', { class: 'qbody', id: `qt-${qi}`, text: q.question }),
+        el('span', { class: 'q-type', text: q.type === 'short' ? 'Short answer' : 'Multiple choice' })));
+
+      if (q.type === 'short') {
+        const ta = el('textarea', { id: `ans-${qi}`, class: 'sa-input', rows: 4, autocomplete: 'off', spellcheck: 'false', placeholder: 'Type your answer…' });
+        ta.addEventListener('input', () => { s.answers[qi] = ta.value; updateHeader(); });
+        card.append(el('label', { class: 'sa-label', for: `ans-${qi}`, text: 'Your answer' }), ta);
+      } else {
+        const group = el('div', { role: 'radiogroup', 'aria-labelledby': `qt-${qi}` });
+        q.choices.forEach((c, ci) => {
+          const input = el('input', { type: 'radio', name: `ans-${qi}`, value: ci });
+          const label = el('label', { class: 'opt' }, input, el('span', { class: 'l', text: LETTERS[ci] }), el('span', { text: c }));
+          input.addEventListener('change', () => {
+            s.answers[qi] = ci;
+            group.querySelectorAll('.opt').forEach((o, i) => o.classList.toggle('sel', i === ci));
+            updateHeader();
+          });
+          group.append(label);
         });
-        group.append(label);
-      });
-      card.append(group);
+        card.append(group);
+      }
+
+      if (single) {
+        const last = qi === s.questions.length - 1;
+        card.append(el('div', { class: 'card-nav' },
+          el('button', { type: 'button', disabled: qi === 0, onclick: () => goTo(qi - 1, true) }, '← Previous'),
+          el('span', { class: 'pos', text: `${qi + 1} / ${s.questions.length}` }),
+          el('span', { class: 'spacer' }),
+          last
+            ? el('button', { type: 'button', class: 'primary', onclick: askSubmit }, 'Review & submit')
+            : el('button', { type: 'button', class: 'primary', onclick: () => goTo(qi + 1, true) }, 'Next →')));
+        card.hidden = qi !== s.current;
+      }
       wrap.append(card);
     });
+    $('submitBtnBottom').parentElement.hidden = single;
   }
+
+  function goTo(i, focus) {
+    const s = state.session;
+    if (!s) return;
+    i = Math.max(0, Math.min(s.questions.length - 1, i));
+    s.current = i;
+    const card = $(`q-${i}`);
+    if (s.layout === 'single') {
+      s.questions.forEach((_, qi) => { $(`q-${qi}`).hidden = qi !== i; });
+      window.scrollTo(0, 0);
+      if (focus) card.focus();
+    } else {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      card.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+      if (focus) card.focus({ preventScroll: true });
+    }
+    updatePalette();
+  }
+
+  function updatePalette() {
+    const s = state.session;
+    if (!s) return;
+    s.questions.forEach((q, qi) => {
+      const b = $(`pal-${qi}`);
+      if (!b) return;
+      const ans = isAnswered(s, qi);
+      const cur = s.layout === 'single' && qi === s.current;
+      b.classList.toggle('answered', ans);
+      b.classList.toggle('current', cur);
+      if (cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+      b.setAttribute('aria-label', `Question ${qi + 1}, ${q.type === 'short' ? 'short answer' : 'multiple choice'}, ${ans ? 'answered' : 'not answered'}`);
+    });
+  }
+
+  // Keyboard navigation for the one-question-at-a-time layout
+  document.addEventListener('keydown', (e) => {
+    const s = state.session;
+    if (!s || s.submitted || s.layout !== 'single' || $('test').classList.contains('hidden')) return;
+    if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('matPanel').classList.contains('hidden')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type !== 'radio'))) return;
+    const onRadio = t && t.tagName === 'INPUT' && t.type === 'radio';
+    const k = e.key;
+    if (k === 'n' || k === 'N' || (k === 'ArrowRight' && !onRadio)) { e.preventDefault(); goTo(s.current + 1, true); return; }
+    if (k === 'p' || k === 'P' || (k === 'ArrowLeft' && !onRadio)) { e.preventDefault(); goTo(s.current - 1, true); return; }
+    const li = k.length === 1 ? 'abcdefgh'.indexOf(k.toLowerCase()) : -1;
+    const q = s.questions[s.current];
+    if (li >= 0 && q.type === 'mcq' && li < q.choices.length) {
+      e.preventDefault();
+      const input = document.querySelector(`input[name="ans-${s.current}"][value="${li}"]`);
+      input.click();
+      input.focus();
+    }
+  });
 
   function fmtTime(ms) {
     const total = Math.max(0, Math.round(ms / 1000));
@@ -1652,7 +2021,7 @@ Queue = FIFO · Stack = LIFO`;
   let timeWarnTimer = null;
   function showTimeWarning() {
     const s = state.session;
-    const unanswered = s.answers.filter((a) => a < 0).length;
+    const unanswered = countUnanswered(s);
     $('timeWarnText').textContent = unanswered
       ? `You have ${unanswered} unanswered question${unanswered === 1 ? '' : 's'}.`
       : 'All questions answered. Use the time left to review.';
@@ -1703,7 +2072,8 @@ Queue = FIFO · Stack = LIFO`;
   function updateHeader() {
     const s = state.session;
     if (!s) return;
-    const answered = s.answers.filter((a) => a >= 0).length;
+    const answered = s.questions.length - countUnanswered(s);
+    updatePalette();
     $('answeredCount').textContent = `${answered}/${s.questions.length}`;
     $('violCount').textContent = s.violations.length;
     $('violMax').textContent = s.autoSubmit ? ` / ${s.maxViolations}` : '';
@@ -1808,7 +2178,13 @@ Queue = FIFO · Stack = LIFO`;
    * ------------------------------------------------------------- */
   const locked = () => state.session && state.session.locked;
   ['contextmenu', 'copy', 'cut', 'paste', 'selectstart', 'dragstart', 'drop'].forEach((ev) => {
-    document.addEventListener(ev, (e) => { if (locked()) e.preventDefault(); }, true);
+    document.addEventListener(ev, (e) => {
+      if (!locked()) return;
+      // Let people select and edit text in their own short answers (copy/paste stays blocked)
+      const t = e.target && e.target.nodeType === 1 ? e.target : e.target && e.target.parentElement;
+      if ((ev === 'selectstart' || ev === 'dragstart') && t && t.closest && t.closest('textarea')) return;
+      e.preventDefault();
+    }, true);
   });
 
   document.addEventListener('keydown', (e) => {
@@ -1840,7 +2216,7 @@ Queue = FIFO · Stack = LIFO`;
   function askSubmit() {
     const s = state.session;
     if (!s || s.submitted) return;
-    const unanswered = s.answers.filter((a) => a < 0).length;
+    const unanswered = countUnanswered(s);
     $('confirmText').textContent = unanswered
       ? `You have ${unanswered} unanswered question${unanswered === 1 ? '' : 's'}. Once you submit, you can't change your answers.`
       : 'All questions answered. Once you submit, you can\'t change your answers.';
@@ -1869,6 +2245,7 @@ Queue = FIFO · Stack = LIFO`;
     exitFs();
 
     state.lastResult = { ...s, finishedAt, reason };
+    reviewFilter = 'all';
     renderResults(state.lastResult);
     showScreen('results');
     window.scrollTo(0, 0);
@@ -1877,19 +2254,62 @@ Queue = FIFO · Stack = LIFO`;
   /* ---------------------------------------------------------------
    * Results
    * ------------------------------------------------------------- */
-  function renderResults(r) {
-    const graded = r.questions.map((q, i) => {
+  /* Short-answer grading: case, accents and punctuation are ignored; a keyword counts when
+     the answer equals it or contains it as whole word(s). */
+  const normText = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^\p{L}\p{N}\s]+/gu, ' ').replace(/\s+/g, ' ').trim();
+
+  function gradeShort(q, response) {
+    const resp = normText(response);
+    if (!resp) return { status: 'unanswered', hits: [] };
+    const pairs = q.accepted.map((k) => [k, normText(k)]).filter(([, n]) => n);
+    if (!pairs.length) return { status: 'review', hits: [] };
+    const padded = ` ${resp} `;
+    const hits = pairs.filter(([, n]) => resp === n || padded.includes(` ${n} `)).map(([k]) => k);
+    const ok = q.keywordMode === 'all' ? hits.length === pairs.length : hits.length > 0;
+    return { status: ok ? 'correct' : 'incorrect', hits };
+  }
+
+  function gradeAll(r) {
+    return r.questions.map((q, i) => {
       const a = r.answers[i];
+      if (q.type === 'short') {
+        const g = gradeShort(q, a);
+        let status = g.status;
+        let how = g.status === 'review' ? 'pending' : 'auto';
+        if (g.status !== 'unanswered' && r.overrides[i]) { status = r.overrides[i]; how = 'self'; }
+        return { q, a, status, how, hits: g.hits };
+      }
       let status;
       if (q.answer < 0) status = 'nokey';
       else if (a < 0) status = 'unanswered';
       else status = a === q.answer ? 'correct' : 'incorrect';
-      return { q, a, status };
+      return { q, a, status, how: 'auto', hits: [] };
     });
-    const scorable = graded.filter((g) => g.status !== 'nokey').length;
-    const correct = graded.filter((g) => g.status === 'correct').length;
-    const incorrect = graded.filter((g) => g.status === 'incorrect').length;
-    const unanswered = graded.filter((g) => g.status === 'unanswered').length;
+  }
+
+  function setOverride(r, i, verdict) {
+    if (verdict) r.overrides[i] = verdict; else delete r.overrides[i];
+    const y = window.scrollY;
+    renderResults(r);
+    window.scrollTo(0, y);
+    const b = $(`grade-${i}-${verdict || 'correct'}`);
+    if (b) b.focus({ preventScroll: true });
+  }
+
+  const ansBox = (k, t, cls = '') => el('div', { class: 'ans-box ' + cls }, el('div', { class: 'k', text: k }), el('div', { class: 't', text: t }));
+  let reviewFilter = 'all';
+
+  function renderResults(r) {
+    r.overrides = r.overrides || {};
+    const graded = gradeAll(r);
+    const count = (st, type) => graded.filter((g) => g.status === st && (!type || g.q.type === type)).length;
+    const scorableOf = (type) => graded.filter((g) => g.status !== 'nokey' && g.status !== 'review' && (!type || g.q.type === type)).length;
+    const scorable = scorableOf();
+    const correct = count('correct');
+    const incorrect = count('incorrect');
+    const unanswered = count('unanswered');
+    const pending = count('review');
     const pct = scorable ? Math.round((correct / scorable) * 1000) / 10 : 0;
     const taken = r.finishedAt - r.startTime;
 
@@ -1912,6 +2332,15 @@ Queue = FIFO · Stack = LIFO`;
     bar.style.width = pct + '%';
     bar.style.background = pct >= 70 ? 'var(--good)' : pct >= 50 ? 'var(--warn)' : 'var(--bad)';
 
+    const nm = graded.filter((g) => g.q.type === 'mcq').length;
+    const ns = graded.length - nm;
+    const parts = [];
+    if (nm) parts.push(`Multiple choice: ${count('correct', 'mcq')}/${scorableOf('mcq')} correct`);
+    if (ns) parts.push(`Short answer: ${count('correct', 'short')}/${scorableOf('short')} correct`);
+    if (pending) parts.push(`${pending} short answer${pending === 1 ? '' : 's'} waiting for your grade (not in the score yet)`);
+    $('typeSplit').textContent = parts.join(' · ');
+    $('typeSplit').className = 'type-split' + (pending ? ' pending' : '');
+
     // Violation log
     const log = $('violLog');
     log.innerHTML = '';
@@ -1930,30 +2359,60 @@ Queue = FIFO · Stack = LIFO`;
         tbody)));
     }
 
-    // Review
+    // Question-by-question review
+    const badgeMap = { correct: ['good', 'Correct'], incorrect: ['bad', 'Incorrect'], unanswered: ['warn', 'Unanswered'], nokey: ['muted', 'No answer key'], review: ['warn', 'Needs your grade'] };
     const list = $('reviewList');
     list.innerHTML = '';
     graded.forEach((g, i) => {
-      const badgeMap = { correct: ['good', 'Correct'], incorrect: ['bad', 'Incorrect'], unanswered: ['warn', 'Unanswered'], nokey: ['muted', 'No answer key'] };
       const [bcls, btxt] = badgeMap[g.status];
-      const ul = el('ul');
-      g.q.choices.forEach((c, ci) => {
-        let cls = '', tag = '';
-        if (ci === g.q.answer) { cls = 'is-correct'; tag = ci === g.a ? '✓ Your answer · Correct' : '✓ Correct answer'; }
-        else if (ci === g.a) { cls = 'is-wrong-pick'; tag = '✗ Your answer'; }
-        ul.append(el('li', { class: cls }, el('b', { text: LETTERS[ci] + ')' }), el('span', { text: c }), tag ? el('span', { class: 'tag', text: tag }) : null));
-      });
-      const summary = el('p', { class: 'note', style: 'margin:8px 0 0' },
-        `Your answer: ${g.a >= 0 ? LETTERS[g.a] : '-'} · Correct answer: ${g.q.answer >= 0 ? LETTERS[g.q.answer] : 'n/a'}`);
-      list.append(el('div', { class: 'review ' + g.status, 'data-status': g.status },
-        el('div', { class: 'row' }, el('b', { text: `Question ${i + 1}` }), el('span', { class: 'badge ' + bcls, text: btxt })),
-        el('div', { class: 'qtext', text: g.q.question }),
-        ul, summary));
+      const item = el('div', { class: 'review ' + g.status, 'data-status': g.status, id: `rev-${i}` });
+      item.append(el('div', { class: 'row' },
+        el('b', { text: `Question ${i + 1}` }),
+        el('span', { class: 'badge ' + bcls, text: btxt }),
+        g.how === 'self' ? el('span', { class: 'badge muted', text: 'Self-graded' }) : null,
+        el('span', { class: 'spacer' }),
+        el('span', { class: 'q-type', text: g.q.type === 'short' ? 'Short answer' : 'Multiple choice' })));
+      item.append(el('div', { class: 'qtext', text: g.q.question }));
+
+      if (g.q.type === 'short') {
+        const answered = String(g.a || '').trim() !== '';
+        const mineCls = g.status === 'correct' ? ' correct-box' : g.status === 'incorrect' ? ' wrong-box' : '';
+        item.append(el('div', { class: 'ans-block' },
+          ansBox('Your answer', answered ? g.a : 'No answer given', 'mine' + mineCls),
+          g.q.modelAnswer ? ansBox('Model answer', g.q.modelAnswer) : null,
+          g.q.accepted.length
+            ? el('p', { class: 'note', style: 'margin:0' }, g.q.keywordMode === 'all' ? 'Needs all of: ' : 'Accepts any of: ',
+              ...g.q.accepted.map((k) => el('span', { class: 'kw' + (g.hits.includes(k) ? ' hit' : ''), text: (g.hits.includes(k) ? '✓ ' : '') + k })))
+            : null));
+        if (answered) {
+          const v = r.overrides[i];
+          const prompt = g.how === 'pending' ? 'Compare with the model answer, then grade yourself:'
+            : g.how === 'auto' ? 'Graded automatically from keywords. Disagree? Override:' : 'Your grade:';
+          item.append(el('div', { class: 'grade-row' },
+            el('span', { class: 'note', text: prompt }),
+            el('button', { class: 'small g-ok', id: `grade-${i}-correct`, 'aria-pressed': v === 'correct' ? 'true' : 'false', onclick: () => setOverride(r, i, 'correct') }, '✓ Mark correct'),
+            el('button', { class: 'small g-bad', id: `grade-${i}-incorrect`, 'aria-pressed': v === 'incorrect' ? 'true' : 'false', onclick: () => setOverride(r, i, 'incorrect') }, '✗ Mark incorrect'),
+            v ? el('button', { class: 'small', id: `grade-${i}-reset`, onclick: () => setOverride(r, i, null) }, g.q.accepted.length ? 'Use automatic grade' : 'Clear grade') : null));
+        }
+      } else {
+        const ul = el('ul');
+        g.q.choices.forEach((c, ci) => {
+          let cls = '', tag = '';
+          if (ci === g.q.answer) { cls = 'is-correct'; tag = ci === g.a ? '✓ Your answer · Correct' : '✓ Correct answer'; }
+          else if (ci === g.a) { cls = 'is-wrong-pick'; tag = '✗ Your answer'; }
+          ul.append(el('li', { class: cls }, el('b', { text: LETTERS[ci] + ')' }), el('span', { text: c }), tag ? el('span', { class: 'tag', text: tag }) : null));
+        });
+        item.append(ul, el('p', { class: 'note', style: 'margin:8px 0 0' },
+          `Your answer: ${g.a >= 0 ? LETTERS[g.a] : '-'} · Correct answer: ${g.q.answer >= 0 ? LETTERS[g.q.answer] : 'n/a'}`));
+      }
+      if (g.q.explanation) item.append(ansBox('Explanation', g.q.explanation, 'explain'));
+      list.append(item);
     });
-    applyReviewFilter('all');
+    applyReviewFilter(reviewFilter);
   }
 
   function applyReviewFilter(f) {
+    reviewFilter = f;
     document.querySelectorAll('#reviewFilters button').forEach((b) => b.classList.toggle('active', b.dataset.f === f));
     document.querySelectorAll('#reviewList .review').forEach((r) => {
       r.classList.toggle('hidden', f !== 'all' && r.dataset.status !== f);
@@ -1964,11 +2423,12 @@ Queue = FIFO · Stack = LIFO`;
     if (b) applyReviewFilter(b.dataset.f);
   });
 
+  // Retake starts straight away with the same questions and settings (this click is the
+  // user gesture fullscreen needs). If something is wrong, the setup screen shows why.
   $('retakeBtn').addEventListener('click', () => {
     showScreen('setup');
-    window.scrollTo(0, 0);
-    setStatus($('startStatus'), 'Ready. Click "Start Test & Lock Browser" to retake.', 'ok');
-    $('startBtn').focus();
+    $('startBtn').click();
+    if (!state.session || state.session.submitted) { window.scrollTo(0, 0); $('startStatus').scrollIntoView({ block: 'center' }); }
   });
   $('newTestBtn').addEventListener('click', () => { showScreen('setup'); window.scrollTo(0, 0); });
 
