@@ -317,7 +317,6 @@
   .q-edit .ctx textarea { margin-top: 8px; font-size: 13px; }
 
   /* Reference documents: library view, viewer, side panel during a test */
-  #original.wrap { max-width: 1280px; }
   a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
     border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); padding: 8px 14px; }
   a.btn:hover { border-color: var(--text); }
@@ -376,6 +375,42 @@
     .lib { grid-template-columns: 1fr; }
     .lib-side { position: static; }
     .lib-viewer { height: 70vh; padding: 10px; }
+  }
+
+  /* Reference panel: fixed split-screen dock; the page content shifts left beside it */
+  :root { --dock-w: clamp(340px, 45vw, 900px); }
+  .dock {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 900;
+    width: var(--dock-w); display: flex; flex-direction: column;
+    background: var(--surface); border-left: 2px solid var(--ink);
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px);
+  }
+  .dock-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); flex: none; }
+  .dock-tabs { display: flex; gap: 6px; overflow-x: auto; flex: 1; min-width: 0; padding: 2px; }
+  .dock-tabs button { white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; display: inline-block; }
+  .dock-tabs button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .dock-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex: none; }
+  .dock-title { display: flex; flex-direction: column; min-width: 0; }
+  .dock-title b { overflow-wrap: anywhere; }
+  .dock-title .note { font-size: 12px; }
+  .dock-actions { gap: 6px; }
+  .dock-viewer { flex: 1; min-height: 0; padding: 12px; background: var(--surface-2); }
+  .dock-show {
+    position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 899;
+    writing-mode: vertical-rl; padding: 14px 8px; border-radius: var(--radius) 0 0 var(--radius);
+    background: var(--primary); border-color: var(--primary); color: var(--primary-ink);
+    margin-right: env(safe-area-inset-right, 0px);
+  }
+  .dock-show:hover { opacity: .9; }
+  .dock-show .lock-ico { writing-mode: horizontal-tb; }
+  @media (min-width: 1001px) {
+    body.dock-open .wrap, body.dock-open .test-header .inner {
+      margin-right: calc(var(--dock-w) + 16px);
+      margin-left: max(16px, calc((100vw - var(--dock-w) - 880px) / 2));
+    }
+  }
+  @media (max-width: 1000px) {
+    .dock { width: 100%; }
   }
 
   /* Mode switcher (Original file / MCQ test / Short answer test / Mixed) */
@@ -473,7 +508,7 @@
     <div class="row">
       <button id="emptyUpload" class="primary big">Upload a file</button>
       <button id="emptyPaste">Paste questions</button>
-      <button id="emptyOriginal">Just view a file as-is</button>
+      <button id="emptyOriginal">Add a reference file</button>
     </div>
   </div>
 
@@ -622,7 +657,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <label class="field"><span>Max violations before auto-submit</span><input id="maxViol" type="number" min="1" max="50" value="3"></label>
       <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
       <label class="inline"><input id="shuffle" type="checkbox"> Shuffle question order</label>
-      <label class="field"><span>Reference documents during the test</span><select id="refAccess"><option value="locked">Locked until you submit or exit</option><option value="allowed">Available beside the test</option></select></label>
+      <label class="field"><span>Reference documents during the test</span><select id="refAccess"><option value="allowed">Open beside the test</option><option value="locked">Locked until you submit or exit</option></select></label>
       <label class="inline"><input id="allowMat" type="checkbox" checked> When available: include reference materials</label>
       <label class="inline"><input id="allowOrig" type="checkbox" checked> When available: include the test's own file</label>
     </div>
@@ -643,7 +678,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <div class="stat">Answered <b id="answeredCount">0/0</b></div>
       <div class="stat viol">Violations <b id="violCount">0</b><span id="violMax"></span></div>
       <span class="spacer"></span>
-      <button id="matBtn" class="hidden" aria-controls="matPanel" aria-expanded="false">Reference documents</button>
+      <button id="matBtn" class="hidden" aria-controls="dock" aria-expanded="false">Reference panel</button>
       <button id="exitBtn">Exit test</button>
       <button id="submitBtn" class="primary">Submit Test</button>
     </div>
@@ -662,38 +697,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
 </section>
 
-<!-- ===================== ORIGINAL FILE (shown as uploaded) ===================== -->
-<section id="original" class="wrap wide" aria-labelledby="origTitle">
-  <nav id="tabsOriginal" class="mode-tabs" aria-label="Modes"></nav>
-  <div class="lib">
-    <aside class="lib-side" aria-labelledby="libHead">
-      <div class="lib-side-head">
-        <h2 id="libHead">Your files</h2>
-        <button id="origOpen" class="small">+ Add files</button>
-      </div>
-      <ul id="libList" class="lib-list"></ul>
-      <p class="note lib-foot">Files stay on this device and are shown exactly as uploaded.</p>
-    </aside>
-    <div class="lib-main">
-      <div class="lib-bar">
-        <div class="lib-title">
-          <span class="eyebrow" id="origKind">Reference documents</span>
-          <h1 id="origTitle">Reference documents</h1>
-          <p id="origInfo" class="note" style="margin:0"></p>
-        </div>
-        <div class="row lib-actions">
-          <div id="libZoom"></div>
-          <a id="origDownload" class="btn small hidden" download>Download</a>
-          <a id="origNewTab" class="btn small hidden" target="_blank" rel="noopener">Open in new tab</a>
-          <button id="origBuild" class="small hidden">Make a test from this file</button>
-          <button id="origRemove" class="small danger hidden">Remove</button>
-        </div>
-      </div>
-      <div id="origViewer" class="doc-scroll lib-viewer" tabindex="0" aria-label="Document viewer"></div>
-    </div>
-  </div>
-  <input id="origInput" type="file" multiple hidden>
-</section>
 
 <!-- ===================== RESULTS SCREEN ===================== -->
 <section id="results" class="wrap hidden">
@@ -726,17 +729,28 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
 </section>
 
-<!-- ===================== REFERENCE DOCUMENTS SIDE PANEL (during a test, when allowed) ===================== -->
-<aside id="matPanel" class="ref-panel hidden" aria-label="Reference documents">
-  <div class="mat-head">
-    <span class="eyebrow" style="margin:0">Reference documents</span>
-    <span class="spacer"></span>
-    <div id="panelZoom"></div>
-    <button id="matClose" class="small">Close</button>
+<!-- ===================== REFERENCE PANEL (split screen, on every screen) ===================== -->
+<aside id="dock" class="dock hidden" aria-label="Reference panel">
+  <div class="dock-head">
+    <span class="eyebrow" style="margin:0">Reference</span>
+    <div id="dockTabs" class="dock-tabs" role="tablist" aria-label="Files"></div>
+    <button id="dockAdd" class="small">+ Add</button>
+    <button id="dockCollapse" class="small" aria-controls="dock" title="Hide the reference panel">Hide ›</button>
   </div>
-  <div id="matTabs" class="mat-tabs" role="tablist"></div>
-  <div id="matBody" class="doc-scroll ref-body" tabindex="0" aria-label="Document viewer"></div>
+  <div class="dock-bar">
+    <div class="dock-title"><b id="dockName">Reference panel</b><span id="dockInfo" class="note"></span></div>
+    <div class="row dock-actions">
+      <div id="dockZoom"></div>
+      <a id="dockDownload" class="btn small hidden" download>Download</a>
+      <a id="dockNewTab" class="btn small hidden" target="_blank" rel="noopener">New tab</a>
+      <button id="dockBuild" class="small hidden">Make a test</button>
+      <button id="dockRemove" class="small danger hidden">Remove</button>
+    </div>
+  </div>
+  <div id="dockViewer" class="doc-scroll dock-viewer" tabindex="0" aria-label="Document viewer"></div>
+  <input id="origInput" type="file" multiple hidden>
 </aside>
+<button id="dockShow" class="dock-show hidden" aria-controls="dock" aria-expanded="false">Reference panel</button>
 
 <!-- ===================== BLOCKER ===================== -->
 <div id="blocker" class="overlay blocker hidden" role="alertdialog" aria-modal="true" aria-labelledby="blockerTitle">
@@ -1926,12 +1940,16 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   // files are never touched.
   function setOriginalFile(file) {
     state.docs.filter((d) => d.role === 'test' && d.file !== file).forEach((d) => removeDoc(d.id));
-    const existing = state.docs.find((d) => d.file === file);
+    // The same file already added as a reference becomes the test file instead of a duplicate
+    const existing = state.docs.find((d) => d.file === file)
+      || state.docs.find((d) => d.role === 'reference' && d.file && d.name === file.name && d.size === file.size && d.file.lastModified === file.lastModified);
     if (existing) existing.role = 'test';
     else addDoc(file, 'test');
+    renderDock(true);
   }
   function clearOriginalFile() {
     state.docs.filter((d) => d.role === 'test').forEach((d) => removeDoc(d.id));
+    renderDock(true);
   }
   function docHref(d) {
     if (d.url) return d.url;
@@ -2062,6 +2080,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   /* ---------- Setup screen, Part 4: reference materials list ---------- */
   function renderMatList() {
+    renderDock(true);
     const list = $('matList');
     list.innerHTML = '';
     const refs = state.materials;
@@ -2148,98 +2167,139 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     nav.innerHTML = '';
     const nm = state.questions.filter((q) => q.type === 'mcq').length;
     const ns = state.questions.length - nm;
-    const tabs = [['original', 'Reference documents', state.docs.length], ['mcq', 'MCQ test', nm], ['short', 'Short answer test', ns]];
+    const tabs = [['original', 'Reference panel', state.docs.length], ['mcq', 'MCQ test', nm], ['short', 'Short answer test', ns]];
     if (nm && ns) tabs.push(['all', 'Mixed test', nm + ns]);
     tabs.forEach(([k, label, n]) => nav.append(el('button', {
-      type: 'button', class: 'mode-tab' + (k === active ? ' active' : ''), 'aria-current': k === active ? 'page' : null,
+      type: 'button', class: 'mode-tab' + ((k === 'original' ? state.dockOpen : k === active) ? ' active' : ''),
+      'aria-current': k === active ? 'page' : null, 'aria-pressed': k === 'original' ? String(!!state.dockOpen) : null,
       onclick: () => switchMode(k),
     }, label, el('span', { class: 'tab-n', text: String(n), 'aria-label': k === 'original' ? `${n} files` : `${n} questions` }))));
     nav.append(el('span', { class: 'spacer' }), el('button', { type: 'button', class: 'mode-tab', onclick: () => setView('setup') }, 'Edit or load tests'));
   }
   // Test modes go through the cover page (stage 1) before any questions are shown
   function switchMode(k) {
-    if (k === 'original') { setView('original'); return; }
+    if (k === 'original') { toggleDock(); return; }
     state.coverChoice = 'test';
     $('testMode').value = k;
     setView('cover');
   }
 
-  // Full-page Reference documents view: file list on the side, viewer beside it
-  function renderOriginalView() {
-    renderModeTabs('tabsOriginal', 'original');
-    const docs = state.docs;
-    if (!docs.some((d) => d.id === state.activeDocId)) state.activeDocId = docs.length ? (state.originalFile || docs[0]).id : null;
+  /* ---------- Reference panel: a persistent split-screen dock on every screen ----------
+   * Open by default on wide screens. It scrolls on its own, so the file stays readable
+   * while you build a test, read the cover page or answer questions. During a test it
+   * shows only the documents the test allows, read-only; a locked test hides it. */
+  state.dockOpen = window.matchMedia('(min-width: 1001px)').matches;
+  let dockShown = null;   // id of the document currently drawn (kept, so scroll position survives)
+
+  function dockContext() {
+    const s = state.session;
+    if (s && !s.submitted) return { inTest: true, locked: s.refLocked, docs: s.refLocked ? [] : s.refDocs };
+    return { inTest: false, locked: false, docs: state.docs };
+  }
+  function openDock() { state.dockOpen = true; renderDock(); }
+  function closeDock() { state.dockOpen = false; renderDock(); }
+  function toggleDock() {
+    const s = state.session;
+    const inTest = s && !s.submitted;
+    if (inTest && s.refLocked) { openExitModal('reference'); return; }
+    if (state.dockOpen) { closeDock(); return; }
+    openDock();
+    if (inTest) s.refOpens++;
+    $('dockViewer').focus({ preventScroll: true });
+  }
+
+  function renderDock(force) {
+    const ctx = dockContext();
+    const usable = !ctx.inTest || ctx.docs.length > 0;
+    const open = state.dockOpen && usable;
+    $('dock').classList.toggle('hidden', !open);
+    document.body.classList.toggle('dock-open', open);
+
+    // Edge tab to bring the panel back (or, in a locked test, to explain the lock)
+    const tab = $('dockShow');
+    const tabVisible = !open && (!ctx.inTest || ctx.docs.length > 0 || (ctx.locked && state.docs.length > 0));
+    tab.classList.toggle('hidden', !tabVisible);
+    tab.replaceChildren(...(ctx.locked ? [lockIcon(), 'Reference locked'] : ['Reference panel']));
+    tab.setAttribute('aria-expanded', 'false');
+    const hb = $('matBtn');
+    hb.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (state.view === 'cover') renderModeTabs('tabsCover', $('testMode').value);
+    if (!open) return;
+
+    const docs = ctx.docs;
+    if (!docs.some((d) => d.id === state.activeDocId)) state.activeDocId = docs.length ? ((!ctx.inTest && state.originalFile) || docs[0]).id : null;
     const d = docs.find((x) => x.id === state.activeDocId) || null;
 
-    const list = $('libList');
-    list.innerHTML = '';
-    if (!docs.length) list.append(el('li', { class: 'note lib-empty', text: 'No files yet.' }));
-    [...docs.filter((x) => x.role === 'test'), ...docs.filter((x) => x.role !== 'test')].forEach((x) => list.append(el('li', {},
-      el('button', {
-        type: 'button', class: 'lib-item' + (x === d ? ' active' : ''), 'aria-current': x === d ? 'true' : null,
-        onclick: () => { state.activeDocId = x.id; renderOriginalView(); $('origViewer').focus({ preventScroll: true }); },
-      },
-      el('span', { class: 'lib-role', text: x.role === 'test' ? 'Test file' : x.note ? 'Note' : 'Reference' }),
-      el('span', { class: 'nm', text: x.name }),
-      el('span', { class: 'mt', text: `${x.note ? 'Note' : KIND_LABEL[x.kind]} · ${fmtSize(x.size)}` })))));
+    const tabs = $('dockTabs');
+    tabs.innerHTML = '';
+    [...docs.filter((x) => x.role === 'test'), ...docs.filter((x) => x.role !== 'test')].forEach((x) => tabs.append(el('button', {
+      type: 'button', class: 'small' + (x === d ? ' active' : ''), role: 'tab', 'aria-selected': x === d ? 'true' : 'false',
+      title: `${x.role === 'test' ? 'Test file' : x.note ? 'Note' : 'Reference'} · ${x.name}`,
+      onclick: () => { state.activeDocId = x.id; renderDock(); },
+    }, x.name)));
+    if (!docs.length) tabs.append(el('span', { class: 'note', text: 'No files yet' }));
 
-    $('origKind').textContent = d ? (d.role === 'test' ? 'Test file · shown exactly as uploaded' : 'Reference document · shown exactly as uploaded') : 'Reference documents';
-    $('origTitle').textContent = d ? d.name : 'Reference documents';
-    $('origInfo').textContent = d
-      ? `${d.note ? 'Note' : KIND_LABEL[d.kind]} · ${fmtSize(d.size)}`
-      : 'Add your test file, formula sheets or notes to read them here. Switch to a test mode above when you are ready.';
-    // Embedded pages (e.g. a claude.ai artifact) can't download or open new tabs, so those links only show on the real site
-    const dl = $('origDownload');
-    dl.classList.toggle('hidden', !d || inFrame);
+    $('dockAdd').classList.toggle('hidden', ctx.inTest);
+    $('dockName').textContent = d ? d.name : 'Reference panel';
+    $('dockInfo').textContent = d
+      ? `${d.role === 'test' ? 'Test file' : d.note ? 'Note' : 'Reference'} · ${d.note ? 'Note' : KIND_LABEL[d.kind]} · ${fmtSize(d.size)} · shown as uploaded`
+      : 'Add your test file, formula sheets or notes to keep them open here while you work.';
+    // Embedded pages (e.g. a claude.ai artifact) can't download or open new tabs
+    const dl = $('dockDownload');
+    dl.classList.toggle('hidden', !d || inFrame || ctx.inTest);
     if (d) { dl.href = docHref(d); dl.setAttribute('download', docDownloadName(d)); }
-    const nt = $('origNewTab');
-    nt.classList.toggle('hidden', !d || inFrame || !d.url || d.kind === 'other');
+    const nt = $('dockNewTab');
+    nt.classList.toggle('hidden', !d || inFrame || ctx.inTest || !d.url || d.kind === 'other');
     if (d && d.url) nt.href = d.url;
-    $('origBuild').classList.toggle('hidden', !d || !d.file || d.role === 'test' || !['txt', 'csv', 'json', 'pdf'].includes(d.name.split('.').pop().toLowerCase()));
-    $('origRemove').classList.toggle('hidden', !d);
-    $('libZoom').replaceChildren(d && d.kind !== 'other' ? zoomControl($('origViewer')) : '');
+    $('dockBuild').classList.toggle('hidden', !d || ctx.inTest || !d.file || d.role === 'test' || !['txt', 'csv', 'json', 'pdf'].includes(d.name.split('.').pop().toLowerCase()));
+    $('dockRemove').classList.toggle('hidden', !d || ctx.inTest);
 
-    const viewer = $('origViewer');
-    if (d) { renderDoc(viewer, d); return; }
+    const id = d ? d.id : null;
+    if (!force && dockShown === id && $('dockViewer').childElementCount) return;   // keep the reader's place
+    dockShown = id;
+    const viewer = $('dockViewer');
+    $('dockZoom').replaceChildren(d && d.kind !== 'other' ? zoomControl(viewer) : '');
+    if (d) { renderDoc(viewer, d, { locked: ctx.inTest }); return; }
     clearViewer(viewer);
     const dz = el('div', { class: 'drop orig-drop', tabindex: '0', role: 'button', 'aria-label': 'Add files' },
       el('strong', { text: 'Drop files here or click to browse' }),
-      el('small', { text: 'Any file (PDF, image, Word, text). Shown exactly as it is, with no questions made from it.' }));
+      el('small', { text: 'Any file (PDF, image, Word, text). Shown exactly as it is, beside your work.' }));
     dz.addEventListener('click', () => $('origInput').click());
     dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('origInput').click(); } });
     ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
     ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
     dz.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) addToLibrary([...e.dataTransfer.files]); });
-    viewer.append(dz, el('p', { class: 'note', style: 'margin:0' }, 'Want a test instead? ',
-      el('button', { class: 'small', onclick: () => { setView('setup'); $('fileInput').click(); } }, 'Upload a test file'), ' ',
-      el('button', { class: 'small', onclick: () => { setView('setup'); $('rawText').focus(); } }, 'Paste questions')));
+    viewer.append(dz);
   }
+
   function addToLibrary(files) {
     const added = addMaterialFiles(files);   // stored as-is: no parsing, no questions
     if (added.length) state.activeDocId = added[0].id;
-    renderOriginalView();
+    renderDock(true);
   }
-  $('origOpen').addEventListener('click', () => $('origInput').click());
+  $('dockAdd').addEventListener('click', () => $('origInput').click());
   $('origInput').addEventListener('change', () => {
     const files = [...$('origInput').files];
     $('origInput').value = '';
     if (files.length) addToLibrary(files);
   });
-  $('origRemove').addEventListener('click', () => {
+  $('dockRemove').addEventListener('click', () => {
     if (state.activeDocId == null) return;
     removeDoc(state.activeDocId);
     state.activeDocId = null;
     renderMatList();
-    renderOriginalView();
   });
-  $('origBuild').addEventListener('click', async () => {
+  $('dockBuild').addEventListener('click', async () => {
     const d = state.docs.find((x) => x.id === state.activeDocId);
     if (!d || !d.file) return;
     setView('setup');
     await handleFile(d.file);        // the same parser as a normal upload, only when asked
   });
+  $('dockCollapse').addEventListener('click', () => { closeDock(); $('dockShow').focus(); });
+  $('dockShow').addEventListener('click', toggleDock);
+  $('matBtn').addEventListener('click', toggleDock);
 
-  /* ---------- During a test: side panel + lock ---------- */
+  /* ---------- During a test ---------- */
   function syncRefAccess() {
     const locked = $('refAccess').value === 'locked';
     ['allowMat', 'allowOrig'].forEach((id) => { $(id).disabled = locked; $(id).closest('label').classList.toggle('is-disabled', locked); });
@@ -2252,64 +2312,26 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const docs = [];
     if (state.originalFile && $('allowOrig').checked) docs.push(state.originalFile);
     if ($('allowMat').checked) docs.push(...state.materials);
-    s.refDocs = s.refLocked ? state.docs.slice() : docs;   // locked: shown as locked, never opened
-    s.refActive = 0;
-    s.refShown = null;
-    s.refOpens = 0;
+    s.refDocs = docs;
+    s.refOpens = state.dockOpen && !s.refLocked && docs.length ? 1 : 0;
     const btn = $('matBtn');
-    btn.replaceChildren(...(s.refLocked ? [lockIcon()] : []), 'Reference documents',
-      el('span', { class: 'mat-count', text: String(s.refDocs.length) }));
-    btn.classList.toggle('hidden', !s.refDocs.length);
+    btn.replaceChildren(...(s.refLocked ? [lockIcon()] : []), 'Reference panel',
+      el('span', { class: 'mat-count', text: String(s.refLocked ? state.docs.length : docs.length) }));
+    btn.classList.toggle('hidden', !(s.refLocked ? state.docs.length : docs.length));
     btn.classList.toggle('is-locked', s.refLocked);
     btn.setAttribute('aria-disabled', s.refLocked ? 'true' : 'false');
-    btn.title = s.refLocked ? 'Locked while the test is running' : '';
-    clearViewer($('matBody'));
-    closeMatPanel();
+    btn.title = s.refLocked ? 'Locked while the test is running' : 'Show or hide the reference panel';
+    renderDock();
   }
-  function openMatPanel() {
-    const s = state.session;
-    if (!s || !s.refDocs || !s.refDocs.length) return;
-    if (s.refLocked) { openExitModal('reference'); return; }
-    s.refOpens++;
-    renderRefPanel();
-    $('matPanel').classList.remove('hidden');
-    document.body.classList.add('split-open');
-    $('matBtn').setAttribute('aria-expanded', 'true');
-    $('matClose').focus();
-  }
-  function closeMatPanel() {
-    $('matPanel').classList.add('hidden');
-    document.body.classList.remove('split-open');
-    $('matBtn').setAttribute('aria-expanded', 'false');
-  }
-  // The open document is only re-drawn when another one is picked, so it keeps its place
-  function renderRefPanel() {
-    const s = state.session;
-    const tabs = $('matTabs');
-    tabs.innerHTML = '';
-    tabs.classList.toggle('hidden', s.refDocs.length < 2);
-    s.refDocs.forEach((d, i) => tabs.append(el('button', {
-      type: 'button', class: 'small' + (i === s.refActive ? ' active' : ''), role: 'tab', 'aria-selected': i === s.refActive ? 'true' : 'false',
-      onclick: () => { s.refActive = i; renderRefPanel(); },
-    }, d.name)));
-    const d = s.refDocs[s.refActive];
-    if (s.refShown !== d.id) {
-      s.refShown = d.id;
-      $('panelZoom').replaceChildren(d.kind !== 'other' ? zoomControl($('matBody')) : '');
-      renderDoc($('matBody'), d, { locked: true });
-    }
-  }
-  $('matBtn').addEventListener('click', () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()));
-  $('matClose').addEventListener('click', closeMatPanel);
 
   // Locked tab strip at the top of the test: shows what is unavailable and why
   function testTabs(s) {
     const nav = el('nav', { class: 'mode-tabs test-tabs', 'aria-label': 'Modes (locked during the test)' });
     const locked = (label, why) => el('button', { type: 'button', class: 'mode-tab', 'aria-disabled': 'true', title: why, onclick: () => openExitModal('navigate') }, lockIcon(), label);
     if (s.refDocs.length && !s.refLocked) {
-      nav.append(el('button', { type: 'button', class: 'mode-tab', onclick: () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()) }, 'Reference documents'));
+      nav.append(el('button', { type: 'button', class: 'mode-tab', onclick: toggleDock }, 'Reference panel'));
     } else {
-      nav.append(locked('Reference documents', 'Locked while the test is running'));
+      nav.append(locked('Reference panel', 'Locked while the test is running'));
     }
     const names = { mcq: 'MCQ test', short: 'Short answer test', all: 'Mixed test' };
     ['mcq', 'short', 'all'].forEach((k) => {
@@ -2342,7 +2364,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     s.locked = false;
     clearInterval(s.timerId);
     hideBlocker();
-    closeMatPanel();
     hideTimeWarning();
     closeExitModal();
     $('confirmModal').classList.add('hidden');
@@ -2358,18 +2379,20 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('exitSubmit').addEventListener('click', () => { closeExitModal(); submitTest('manual'); });
 
   /* ---------------------------------------------------------------
-   * Stage flow:  'original' (default)  ->  'cover'  ->  'active-test'  ->  'results'
+   * Stage flow:  'cover' (default)  ->  'active-test'  ->  'results'  ->  'cover'
+   * The reference panel (dock) sits beside every screen and keeps its own scroll.
    * While 'active-test' runs, setView() refuses every other view: leaving goes through
    * Submit or the Exit test confirmation.
    * ('setup' is the separate authoring screen for loading and editing tests.)
    * setView() is the only thing that switches screens. Questions are only rendered
    * by beginSession(), which only the cover page's Start Test button calls.
    * ------------------------------------------------------------- */
-  const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', original: 'original', 'active-test': 'test', results: 'results' };
-  state.view = 'original';   // default mode on load and on Back to menu
+  const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', 'active-test': 'test', results: 'results' };
+  state.view = 'cover';   // default screen; the reference panel opens beside it
 
   function setView(view) {
     if (state.session && !state.session.submitted && view !== 'active-test') { openExitModal('navigate'); return; }
+    if (view === 'original') { state.dockOpen = true; view = 'cover'; }   // 'Reference documents' = cover page + open panel
     // The test screen can't be shown without a session started from the cover page
     if (view === 'active-test' && !(state.session && !state.session.submitted)) view = 'cover';
     if (view === 'results' && !state.lastResult) view = 'cover';
@@ -2377,8 +2400,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     for (const [v, id] of Object.entries(VIEW_SECTIONS)) $(id).classList.toggle('hidden', v !== view);
     // Questions exist in the page only during an active test
     if (view !== 'active-test') $('questionsWrap').innerHTML = '';
-    if (view === 'cover') { renderCover(); renderModeTabs('tabsCover', state.coverChoice === 'original' ? 'original' : $('testMode').value); }
-    if (view === 'original') renderOriginalView();
+    if (view === 'cover') { state.coverChoice = 'test'; renderCover(); renderModeTabs('tabsCover', $('testMode').value); }
+    renderDock();
     window.scrollTo(0, 0);
   }
 
@@ -2446,7 +2469,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('coverEdit').addEventListener('click', () => setView('setup'));
   $('emptyUpload').addEventListener('click', () => { setView('setup'); $('fileInput').click(); });
   $('emptyPaste').addEventListener('click', () => { setView('setup'); $('rawText').focus(); });
-  $('emptyOriginal').addEventListener('click', () => setView('original'));
+  $('emptyOriginal').addEventListener('click', () => { openDock(); $('origInput').click(); });
 
   // Cover title = first line of the detected cover page / intro, else the file name
   function coverTitleAndIntro() {
@@ -2489,9 +2512,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       { v: 'short', t: 'Short answer test', n: ns, d: 'Type a word or a few sentences. Keyword-marked, or you mark it against a model answer.' },
     ];
     if (nm && ns) modes.unshift({ v: 'all', t: 'Mixed test', n: all.length, d: 'Every question, both types.' });
-    const nd = state.docs.length;
-    modes.push({ v: 'original', t: 'Reference documents', n: 1, label: nd ? `${nd} file${nd === 1 ? '' : 's'}` : 'No files yet',
-      d: nd ? 'Read your files exactly as uploaded. No questions, no timer.' : 'Add files and read them as-is, without making questions from them.' });
     const testModes = modes.filter((m) => m.v !== 'original');
     let mode = $('testMode').value;
     // Keep the mode the user picked; only move off it when another mode actually has questions
@@ -2738,7 +2758,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   document.addEventListener('keydown', (e) => {
     const s = state.session;
     if (!s || s.submitted || s.layout !== 'single' || $('test').classList.contains('hidden')) return;
-    if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('exitModal').classList.contains('hidden') || !$('matPanel').classList.contains('hidden')) return;
+    if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('exitModal').classList.contains('hidden')) return;
+    if (e.target && e.target.closest && e.target.closest('#dock')) return;   // keys in the panel stay with the panel
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type !== 'radio'))) return;
@@ -2948,7 +2969,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       return;
     }
     // Esc is captured when Keyboard Lock is active (Chromium); swallow it.
-    if (k === 'escape') { e.preventDefault(); if (!$('exitModal').classList.contains('hidden')) closeExitModal(); else closeMatPanel(); }
+    if (k === 'escape') { e.preventDefault(); if (!$('exitModal').classList.contains('hidden')) closeExitModal(); }
   }, true);
 
   window.addEventListener('beforeunload', (e) => {
@@ -2982,7 +3003,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const finishedAt = Math.min(Date.now(), s.endTime);
 
     hideBlocker();
-    closeMatPanel();
     closeExitModal();
     hideTimeWarning();
     $('confirmModal').classList.add('hidden');
@@ -3190,7 +3210,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   syncRefAccess();
   // Initial state: an empty question bank, opened on the Reference documents view (the default mode).
   state.questions = [];
-  setView('original');
+  setView('cover');   // the reference panel is open beside it on wide screens
 
   window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state, setView };
 })();
