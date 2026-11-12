@@ -340,6 +340,14 @@
     .orig-panel { width: 100%; box-shadow: none; }
   }
 
+  /* Mode switcher (Original file / MCQ test / Short answer test / Mixed) */
+  .mode-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .mode-tab { padding: 7px 12px; font-size: 14px; }
+  .mode-tab.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  .tab-n { font: 600 11px/1 var(--font-mono); padding: 3px 6px; border-radius: 3px; background: var(--surface-2); color: var(--muted); }
+  .mode-tab.active .tab-n { background: var(--primary-ink); color: var(--primary); }
+  .orig-drop { min-height: 38vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+
   /* Cover page */
   .cover-intro { white-space: pre-wrap; color: var(--muted); max-width: 68ch; margin: 0 0 22px; }
   .mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
@@ -417,7 +425,8 @@
 
 <!-- ===================== SETUP SCREEN ===================== -->
 <!-- ===================== COVER (stage 1 of 3) ===================== -->
-<section id="cover" class="wrap" aria-labelledby="coverTitle">
+<section id="cover" class="wrap hidden" aria-labelledby="coverTitle">
+  <nav id="tabsCover" class="mode-tabs" aria-label="Modes"></nav>
   <span class="eyebrow">Practice exam · Cover page</span>
   <h1 id="coverTitle">Practice test</h1>
   <div id="coverIntro" class="cover-intro"></div>
@@ -617,12 +626,12 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 </section>
 
 <!-- ===================== ORIGINAL FILE (shown as uploaded) ===================== -->
-<section id="original" class="wrap wide hidden" aria-labelledby="origTitle">
+<section id="original" class="wrap wide" aria-labelledby="origTitle">
+  <nav id="tabsOriginal" class="mode-tabs" aria-label="Modes"></nav>
   <span class="eyebrow">Original file · shown exactly as uploaded</span>
   <h1 id="origTitle">Original file</h1>
   <p id="origInfo" class="sub"></p>
   <div class="row" style="margin-bottom:14px">
-    <button id="origBack">← Back to cover page</button>
     <a id="origDownload" class="btn hidden" download>Download original</a>
     <button id="origOpen">Open a file as-is</button>
     <button id="origBuild" class="hidden">Make a test from this file</button>
@@ -2041,7 +2050,21 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     container.innerHTML = '';
     const f = state.originalFile;
     if (!f) {
-      container.append(el('div', { class: 'empty' }, 'No original file yet. Use "Open a file as-is" to add one.'));
+      if (locked) { container.append(el('div', { class: 'empty', text: 'No original file.' })); return; }
+      const dz = el('div', { class: 'drop orig-drop', tabindex: '0', role: 'button', 'aria-label': 'Open a file as-is' },
+        el('strong', { text: 'Drop a file here or click to browse' }),
+        el('small', { text: 'Any file (PDF, image, Word, text). Shown exactly as it is, with no questions made from it.' }));
+      dz.addEventListener('click', () => $('origInput').click());
+      dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('origInput').click(); } });
+      ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+      ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
+      dz.addEventListener('drop', (e) => {
+        const file = e.dataTransfer.files[0];
+        if (file) { setOriginalFile(file); renderOriginalView(); }   // stored as-is, never parsed
+      });
+      container.append(dz, el('p', { class: 'note', style: 'margin:0' }, 'Want a test instead? ',
+        el('button', { class: 'small', onclick: () => { setView('setup'); $('fileInput').click(); } }, 'Upload a test file'), ' ',
+        el('button', { class: 'small', onclick: () => { setView('setup'); $('rawText').focus(); } }, 'Paste questions')));
       return;
     }
     if (f.kind === 'pdf') {
@@ -2082,22 +2105,45 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     }
   }
 
-  // Full-page "Original file" view (from the cover page)
+  // Mode switcher shown on the Original file view and the cover page
+  function renderModeTabs(id, active) {
+    const nav = $(id);
+    nav.innerHTML = '';
+    const nm = state.questions.filter((q) => q.type === 'mcq').length;
+    const ns = state.questions.length - nm;
+    const tabs = [['original', 'Original file', null], ['mcq', 'MCQ test', nm], ['short', 'Short answer test', ns]];
+    if (nm && ns) tabs.push(['all', 'Mixed test', nm + ns]);
+    tabs.forEach(([k, label, n]) => nav.append(el('button', {
+      type: 'button', class: 'mode-tab' + (k === active ? ' active' : ''), 'aria-current': k === active ? 'page' : null,
+      onclick: () => switchMode(k),
+    }, label, n == null ? null : el('span', { class: 'tab-n', text: String(n), 'aria-label': `${n} questions` }))));
+    nav.append(el('span', { class: 'spacer' }), el('button', { type: 'button', class: 'mode-tab', onclick: () => setView('setup') }, 'Edit or load tests'));
+  }
+  // Test modes go through the cover page (stage 1) before any questions are shown
+  function switchMode(k) {
+    if (k === 'original') { setView('original'); return; }
+    state.coverChoice = 'test';
+    $('testMode').value = k;
+    setView('cover');
+  }
+
+  // Full-page "Original file" view (the default mode)
   function renderOriginalView() {
     const f = state.originalFile;
     $('origTitle').textContent = f ? f.name : 'Original file';
+    renderModeTabs('tabsOriginal', 'original');
     $('origInfo').textContent = f
       ? `${KIND_LABEL[f.kind]} · ${fmtSize(f.size)} · shown as uploaded, no questions made from it`
-      : 'Open any file (PDF, image, document, text) to view it exactly as it is, without turning it into questions.';
+      : 'Open any file to view it exactly as it is. Switch to a test mode above whenever you are ready.';
     const dl = $('origDownload');
     // Embedded pages (e.g. a claude.ai artifact) can't start downloads, so the link only shows on the real site
     dl.classList.toggle('hidden', !f || inFrame);
     if (f) { dl.href = f.url; dl.setAttribute('download', f.name); }
     $('origBuild').classList.toggle('hidden', !f || !['txt', 'csv', 'json', 'pdf'].includes(f.name.split('.').pop().toLowerCase()));
-    $('origOpen').textContent = f ? 'Open a different file as-is' : 'Open a file as-is';
+    $('origOpen').textContent = 'Open a different file as-is';
+    $('origOpen').classList.toggle('hidden', !f);
     renderOriginal($('origViewer'), false);
   }
-  $('origBack').addEventListener('click', () => setView('cover'));
   $('origOpen').addEventListener('click', () => $('origInput').click());
   $('origInput').addEventListener('change', () => {
     const file = $('origInput').files[0];
@@ -2151,7 +2197,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
    * by beginSession(), which only the cover page's Start Test button calls.
    * ------------------------------------------------------------- */
   const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', original: 'original', 'active-test': 'test', results: 'results' };
-  state.view = 'cover';
+  state.view = 'original';   // default mode on load and on Back to menu
 
   function setView(view) {
     // The test screen can't be shown without a session started from the cover page
@@ -2161,8 +2207,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     for (const [v, id] of Object.entries(VIEW_SECTIONS)) $(id).classList.toggle('hidden', v !== view);
     // Questions exist in the page only during an active test
     if (view !== 'active-test') $('questionsWrap').innerHTML = '';
-    if (view === 'cover') renderCover();
-    if (view === 'original') renderOriginalView();
+    if (view === 'cover') { renderCover(); renderModeTabs('tabsCover', state.coverChoice === 'original' ? 'original' : $('testMode').value); }
+    if (view === 'original') { renderOriginalView(); renderModeTabs('tabsOriginal', 'original'); }
     window.scrollTo(0, 0);
   }
 
@@ -2197,6 +2243,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const res = prepareTest();
     if (res.error && !/test mode/.test(res.error)) { setStatus($('startStatus'), res.error, 'err'); return; }
     setStatus($('startStatus'), '');
+    state.coverChoice = 'test';
     setView('cover');
   });
 
@@ -2204,7 +2251,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('coverStart').addEventListener('click', () => {
     if (state.coverChoice === 'original') {
       setView('original');
-      if (!state.originalFile) $('origInput').click();
       return;
     }
     const st = $('coverStatus');
@@ -2230,7 +2276,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('coverEdit').addEventListener('click', () => setView('setup'));
   $('emptyUpload').addEventListener('click', () => { setView('setup'); $('fileInput').click(); });
   $('emptyPaste').addEventListener('click', () => { setView('setup'); $('rawText').focus(); });
-  $('emptyOriginal').addEventListener('click', () => { setView('original'); $('origInput').click(); });
+  $('emptyOriginal').addEventListener('click', () => setView('original'));
 
   // Cover title = first line of the detected cover page / intro, else the file name
   function coverTitleAndIntro() {
@@ -2265,8 +2311,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     // Empty question bank: ask for the user's own test. The mode cards only show once there is
     // something to choose (questions, or a file kept as-is).
     $('coverEmpty').classList.toggle('hidden', !!all.length);
-    $('coverCard').classList.toggle('hidden', !all.length && !state.originalFile);
-    if (!all.length && state.originalFile) state.coverChoice = 'original';
+    // (the Original file mode has its own tab, so no cards are needed until there are questions)
+    $('coverCard').classList.toggle('hidden', !all.length);
 
     const modes = [
       { v: 'mcq', t: 'Multiple choice test', n: nm, d: 'Pick one option per question. Marked as soon as you submit.' },
@@ -2278,7 +2324,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       d: of ? `${of.name}, shown exactly as uploaded. No questions, no timer.` : 'Open any file and view it as-is, without making questions from it.' });
     const testModes = modes.filter((m) => m.v !== 'original');
     let mode = $('testMode').value;
-    if (!testModes.some((m) => m.v === mode && m.n)) mode = (testModes.find((m) => m.n) || testModes[0]).v;
+    // Keep the mode the user picked; only move off it when another mode actually has questions
+    if (!testModes.some((m) => m.v === mode && m.n) && testModes.some((m) => m.n)) mode = testModes.find((m) => m.n).v;
     $('testMode').value = mode;
     const selected = state.coverChoice === 'original' ? 'original' : mode;
 
@@ -2290,6 +2337,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       input.addEventListener('change', () => {
         if (m.v === 'original') state.coverChoice = 'original';
         else { state.coverChoice = 'test'; $('testMode').value = m.v; }
+        renderModeTabs('tabsCover', m.v);
         wrap.querySelectorAll('.mode-card').forEach((c) => c.classList.toggle('sel', c.dataset.v === m.v));
         renderCoverMeta();
         updateCoverStart();
@@ -2966,17 +3014,17 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     if (b) applyReviewFilter(b.dataset.f);
   });
 
-  // Retake and Back to menu both reset to the cover page (stage 1)
+  // Retake goes to the cover page (stage 1); Back to menu returns to the default Original file view
   $('retakeBtn').addEventListener('click', () => setView('cover'));
-  $('newTestBtn').addEventListener('click', () => setView('cover'));
+  $('newTestBtn').addEventListener('click', () => setView('original'));   // Back to menu = default view
   $('editTestBtn').addEventListener('click', () => setView('setup'));
 
   // Expose parsers for debugging in the console
   ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
 
-  // Initial state: an empty question bank. Nothing is loaded until the user provides a file or text.
+  // Initial state: an empty question bank, opened on the Original file view (the default mode).
   state.questions = [];
-  setView('cover');
+  setView('original');
 
   window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state, setView };
 })();
