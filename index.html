@@ -521,6 +521,7 @@
     <div class="row" style="margin-top:6px">
       <button id="coverStart" class="primary big"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Start Test</button>
       <span class="spacer"></span>
+      <button id="coverViewFile" class="hidden">View test file</button>
       <button id="coverEdit">Edit test or load another</button>
     </div>
   </div>
@@ -548,6 +549,8 @@
     <div class="row" style="margin-top:12px">
       <button id="parseBtn" class="primary">Parse questions</button>
       <button id="uploadBtn">Upload a file</button>
+      <button id="viewTestBtn" class="hidden">View test file</button>
+      <button id="viewOnlyBtn" title="Open a file in the reference panel without making questions from it">Just view a file</button>
       <button id="clearBtn" class="danger">Clear</button>
       <span class="spacer"></span>
     </div>
@@ -1387,10 +1390,13 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   async function handleFile(file) {
     const st = $('fileStatus');
+    // Remembered (not added to the panel) so it can be opened as-is with View test file
+    state.lastTestFile = file;
+    $('viewTestBtn').classList.remove('hidden');
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     state.coverChoice = 'test';
     if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
-      setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). To read it as-is, add it to the reference panel with + Add instead.`, 'err');
+      setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). Click View test file to read it as-is.`, 'err');
       return;
     }
     try {
@@ -1455,6 +1461,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     }
   });
   $('clearBtn').addEventListener('click', () => {
+    state.lastTestFile = null;
+    $('viewTestBtn').classList.add('hidden');
     $('rawText').value = '';
     clearOriginalFile();
     if (state.key && state.key.detected) state.key = null;
@@ -2526,8 +2534,21 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   }
 
   // Start button: begins the test, or opens the original file when that card is chosen
+  // Opens a file in the reference panel exactly as it is: no parsing, no new test
+  function viewFileInPanel(file) {
+    const d = state.docs.find((x) => x.file === file) || addDoc(file, 'reference');
+    state.activeDocId = d.id;
+    state.dockOpen = true;
+    renderMatList();          // also redraws the panel
+    $('dockViewer').focus({ preventScroll: true });
+  }
+  $('viewTestBtn').addEventListener('click', () => { if (state.lastTestFile) viewFileInPanel(state.lastTestFile); });
+  $('coverViewFile').addEventListener('click', () => { if (state.lastTestFile) viewFileInPanel(state.lastTestFile); });
+  $('viewOnlyBtn').addEventListener('click', () => { openDock(); $('origInput').click(); });
+
   function updateCoverStart() {
     const b = $('coverStart');
+    $('coverViewFile').classList.toggle('hidden', !state.lastTestFile);
     if (state.coverChoice === 'original') {
       b.textContent = state.originalFile ? 'Open original file' : 'Open a file as-is';
       b.disabled = false;
