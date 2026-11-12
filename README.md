@@ -14,6 +14,8 @@ Every test opens on a cover page (title, instructions, test mode, question count
 
 Exam-style PDFs are supported too: "Question 3 (Two parts; 8 marks in total): …" with parts "(a) (6 marks): …" become one short-answer question per part, each showing its question's setup, its marks, and an image of the original PDF page so tables and formulas stay readable. The time limit is read from the cover ("You have 3 hours").
 
+**Original file:** any uploaded file (PDF, image, text, document) is also kept exactly as uploaded. Pick **Original file** on the cover page to view it as-is with a download link, or open it from the setup screen with "Open a file as-is" without making questions from it. During a test, the **Original file** button opens it in a side-by-side pane without losing any answers. If the file contains its own answers, it's hidden during the test unless you allow it in Settings.
+
 Everything runs in the browser. Uploaded files never leave your computer.
 
 ## Using your own question bank

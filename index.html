@@ -316,9 +316,35 @@
   .q-edit .ctx { margin: 8px 0; }
   .q-edit .ctx textarea { margin-top: 8px; font-size: 13px; }
 
+  /* Original file: full view and the side-by-side pane during the test */
+  #original.wrap { max-width: 1200px; }
+  a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+  .orig-viewer, .orig-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .orig-frame { width: 100%; height: 78vh; border: 1px solid var(--border); border-radius: var(--radius); background: #ffffff; }
+  .orig-body .orig-frame { height: 100%; min-height: 60vh; flex: 1; border-radius: 0; }
+  .orig-img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); background: #ffffff; }
+  .orig-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.55 var(--font-mono); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 0; max-height: 78vh; overflow: auto; }
+  .orig-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 900;
+    width: min(720px, 46vw); background: var(--surface); border-left: 2px solid var(--ink);
+    display: flex; flex-direction: column;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px);
+  }
+  .orig-panel .orig-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px; }
+  .orig-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Split screen on wide screens: the test stays usable beside the file */
+  @media (min-width: 1001px) {
+    body.split-open #test .wrap, body.split-open .test-header .inner { margin-left: 16px; margin-right: calc(min(720px, 46vw) + 16px); }
+  }
+  @media (max-width: 1000px) {
+    .orig-panel { width: 100%; box-shadow: none; }
+  }
+
   /* Cover page */
   .cover-intro { white-space: pre-wrap; color: var(--muted); max-width: 68ch; margin: 0 0 22px; }
   .mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  @media (max-width: 700px) { .cover-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .cover-meta { grid-template-columns: 1fr; } }
   .mode-card { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--surface); }
   .mode-card:hover { border-color: var(--text); }
   .mode-card input { position: absolute; opacity: 0; width: 1px; height: 1px; }
@@ -326,10 +352,12 @@
   .mode-card .n { font: 600 13px var(--font-mono); color: var(--ink); }
   .mode-card .d { font-size: 13px; color: var(--muted); }
   .mode-card.sel { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+  .mode-card.orig-card { border-style: dashed; }
+  .mode-card.orig-card.sel { border-style: solid; }
   .mode-card.sel .t::after { content: " ✓"; }
   .mode-card.off { opacity: .5; cursor: not-allowed; }
   .mode-card:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .cover-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0; margin: 18px 0 0; border: 1px solid var(--border); }
+  .cover-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin: 18px 0 0; border: 1px solid var(--border); }
   .cover-meta > div { padding: 10px 14px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-width: 0; }
   .cover-meta dt { font: 600 10.5px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
   .cover-meta dd { margin: 0; font-weight: 600; }
@@ -540,6 +568,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
       <label class="inline"><input id="shuffle" type="checkbox"> Shuffle question order</label>
       <label class="inline"><input id="allowMat" type="checkbox" checked> Allow reference materials during the test</label>
+      <label class="inline"><input id="allowOrig" type="checkbox" checked> Allow the original file during the test</label>
     </div>
     <div id="startStatus" class="status"></div>
     <div class="row" style="margin-top:8px">
@@ -558,6 +587,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <div class="stat">Answered <b id="answeredCount">0/0</b></div>
       <div class="stat viol">Violations <b id="violCount">0</b><span id="violMax"></span></div>
       <span class="spacer"></span>
+      <button id="origBtn" class="hidden" aria-controls="origPanel" aria-expanded="false">Original file</button>
       <button id="matBtn" class="hidden" aria-controls="matPanel" aria-expanded="false">Reference <span id="matBtnCount" class="mat-count">0</span></button>
       <button id="submitBtn" class="primary">Submit Test</button>
     </div>
@@ -574,6 +604,21 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   <div class="wrap" style="padding-top:0; text-align:center">
     <button id="submitBtnBottom" class="primary big">Submit Test</button>
   </div>
+</section>
+
+<!-- ===================== ORIGINAL FILE (shown as uploaded) ===================== -->
+<section id="original" class="wrap wide hidden" aria-labelledby="origTitle">
+  <span class="eyebrow">Original file · shown exactly as uploaded</span>
+  <h1 id="origTitle">Original file</h1>
+  <p id="origInfo" class="sub"></p>
+  <div class="row" style="margin-bottom:14px">
+    <button id="origBack">← Back to cover page</button>
+    <a id="origDownload" class="btn hidden" download>Download original</a>
+    <button id="origOpen">Open a file as-is</button>
+    <button id="origBuild" class="hidden">Make a test from this file</button>
+    <input id="origInput" type="file" hidden>
+  </div>
+  <div id="origViewer" class="orig-viewer"></div>
 </section>
 
 <!-- ===================== RESULTS SCREEN ===================== -->
@@ -621,6 +666,17 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
   <div id="matTabs" class="mat-tabs" role="tablist"></div>
   <div id="matBody" class="mat-body"></div>
+</aside>
+
+<!-- ===================== ORIGINAL FILE SIDE PANE (during the test) ===================== -->
+<aside id="origPanel" class="orig-panel hidden" aria-label="Original file">
+  <div class="mat-head">
+    <span class="eyebrow" style="margin:0">Original file</span>
+    <span id="origPanelName" class="note orig-name"></span>
+    <span class="spacer"></span>
+    <button id="origClose" class="small">Close</button>
+  </div>
+  <div id="origPanelBody" class="orig-body"></div>
 </aside>
 
 <!-- ===================== BLOCKER ===================== -->
@@ -1315,8 +1371,11 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   async function handleFile(file) {
     const st = $('fileStatus');
     const ext = (file.name.split('.').pop() || '').toLowerCase();
+    setOriginalFile(file);   // the untouched upload, available as "Original file"
+    state.coverChoice = 'test';
+    $('allowOrig').checked = true;
     if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
-      setStatus(st, `Unsupported file type ".${ext}". Use .txt, .csv, .json or .pdf.`, 'err');
+      setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). ${file.name} is saved as-is: open it from the cover page under "Original file".`, 'err');
       return;
     }
     try {
@@ -1341,7 +1400,10 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
         renderEditor();
       }
       if (qs.length) {
-        setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)} Check them below.`, 'ok');
+        // A file that contains its answers would give them away if shown during the test
+        if (found || qs.keySection) $('allowOrig').checked = false;
+        const origNote = (found || qs.keySection) ? ' The original file contains answers, so it is hidden during the test (change this in Settings).' : ' The original file can also be opened as-is beside the test.';
+        setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)}${origNote} Check them below.`, 'ok');
       } else {
         setStatus(st, `Read ${file.name}, but couldn't find any questions. The extracted text is in the box below, so you can fix it and parse again.`, 'err');
       }
@@ -1374,6 +1436,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   });
   $('sampleBtn').addEventListener('click', () => loadSample());
   function loadSample() {
+    clearOriginalFile();
     $('rawText').value = SAMPLE;
     const qs = parseText(SAMPLE);
     const found = ingestQuestions(qs, 'the sample test', true);
@@ -1385,6 +1448,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   }
   $('clearBtn').addEventListener('click', () => {
     $('rawText').value = '';
+    clearOriginalFile();
     if (state.key && state.key.detected) state.key = null;
     state.detectedKey = null;
     state.intro = '';
@@ -1942,6 +2006,7 @@ Queue = FIFO · Stack = LIFO`;
   function openMatPanel() {
     const s = state.session;
     if (!s || !s.materials || !s.materials.length) return;
+    closeOrigPanel();
     s.matOpens++;
     renderMatPanel();
     $('matPanel').classList.remove('hidden');
@@ -2014,12 +2079,151 @@ Queue = FIFO · Stack = LIFO`;
    * Start test
    * ------------------------------------------------------------- */
   /* ---------------------------------------------------------------
+   * Original file: the uploaded file kept exactly as it is (the File object
+   * itself, shown through a blob: URL). Nothing here parses or changes it.
+   * ------------------------------------------------------------- */
+  state.originalFile = null;    // { file, name, type, size, kind, url }
+  state.coverChoice = 'test';   // 'test' or 'original' (cover page mode cards)
+  const inFrame = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+
+  function fileKind(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (file.type === 'application/pdf' || ext === 'pdf') return 'pdf';
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('text/') || ['txt', 'csv', 'tsv', 'json', 'md', 'xml', 'log'].includes(ext)) return 'text';
+    return 'other';
+  }
+  const KIND_LABEL = { pdf: 'PDF', image: 'Image', text: 'Text file', other: 'File' };
+  function fmtSize(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
+  }
+
+  function setOriginalFile(file) {
+    clearOriginalFile();
+    state.originalFile = { file, name: file.name, type: file.type, size: file.size, kind: fileKind(file), url: URL.createObjectURL(file) };
+  }
+  function clearOriginalFile() {
+    if (state.originalFile) URL.revokeObjectURL(state.originalFile.url);
+    state.originalFile = null;
+  }
+
+  // Renders the original into a container. `locked` = during the test (no download,
+  // PDF viewer toolbar hidden where the browser supports it).
+  async function renderOriginal(container, locked) {
+    container.innerHTML = '';
+    const f = state.originalFile;
+    if (!f) {
+      container.append(el('div', { class: 'empty' }, 'No original file yet. Use "Open a file as-is" to add one.'));
+      return;
+    }
+    if (f.kind === 'pdf') {
+      if (inFrame) {
+        // Inside an embedded page (like a claude.ai artifact) browsers won't show nested PDFs
+        container.append(el('p', { class: 'note', style: 'margin:0' }, 'Showing the pages as pictures because this page is embedded. The file itself is unchanged.'));
+        await showPdfPages(container, f);
+        return;
+      }
+      container.append(
+        el('iframe', { class: 'orig-frame', src: f.url + (locked ? '#toolbar=0&navpanes=0' : ''), title: `${f.name} (original PDF)` }),
+        el('p', { class: 'note', style: 'margin:0' }, 'Shown in your browser\'s own PDF viewer. ',
+          el('button', { class: 'small', onclick: () => { container.innerHTML = ''; showPdfPages(container, f); } }, 'Pages not showing? View them as pictures')));
+    } else if (f.kind === 'image') {
+      container.append(el('img', { class: 'orig-img', src: f.url, alt: f.name, draggable: 'false' }));
+    } else if (f.kind === 'text') {
+      const pre = el('pre', { class: 'orig-text' });
+      pre.textContent = await f.file.text();   // shown verbatim, never parsed
+      container.append(pre);
+    } else {
+      container.append(el('div', { class: 'empty' },
+        `Your browser can't display ${f.name.split('.').pop().toUpperCase()} files directly.`,
+        locked ? null : ' Use "Download original" to open it in another app.'));
+    }
+  }
+
+  // Draws each PDF page to an image for display only (the stored file is not modified)
+  async function showPdfPages(container, f) {
+    const status = el('p', { class: 'note', style: 'margin:0', text: 'Drawing pages…' });
+    container.append(status);
+    try {
+      const { pages, truncated } = await renderPdfPages(f.file, (p, n) => { status.textContent = `Drawing page ${p} of ${n}…`; });
+      status.remove();
+      pages.forEach((src, i) => container.append(el('img', { class: 'orig-img', src, alt: `${f.name}, page ${i + 1}`, draggable: 'false', loading: 'lazy' })));
+      if (truncated) container.append(el('p', { class: 'note', text: `Showing the first ${MAX_PDF_PAGES} pages.` }));
+    } catch (err) {
+      status.textContent = `Couldn't draw the pages: ${err.message}`;
+    }
+  }
+
+  // Full-page "Original file" view (from the cover page)
+  function renderOriginalView() {
+    const f = state.originalFile;
+    $('origTitle').textContent = f ? f.name : 'Original file';
+    $('origInfo').textContent = f
+      ? `${KIND_LABEL[f.kind]} · ${fmtSize(f.size)} · shown as uploaded, no questions made from it`
+      : 'Open any file (PDF, image, document, text) to view it exactly as it is, without turning it into questions.';
+    const dl = $('origDownload');
+    dl.classList.toggle('hidden', !f);
+    if (f) { dl.href = f.url; dl.setAttribute('download', f.name); }
+    $('origBuild').classList.toggle('hidden', !f || !['txt', 'csv', 'json', 'pdf'].includes(f.name.split('.').pop().toLowerCase()));
+    $('origOpen').textContent = f ? 'Open a different file as-is' : 'Open a file as-is';
+    renderOriginal($('origViewer'), false);
+  }
+  $('origBack').addEventListener('click', () => setView('cover'));
+  $('origOpen').addEventListener('click', () => $('origInput').click());
+  $('origInput').addEventListener('change', () => {
+    const file = $('origInput').files[0];
+    $('origInput').value = '';
+    if (!file) return;
+    setOriginalFile(file);           // stored only: no parsing, no questions
+    renderOriginalView();
+  });
+  $('origBuild').addEventListener('click', async () => {
+    const f = state.originalFile;
+    if (!f) return;
+    setView('setup');
+    await handleFile(f.file);        // the same parser as a normal upload, only when asked
+  });
+
+  // Side pane during the test: rendered once per test, then only shown/hidden, so the
+  // viewer keeps its place and the test keeps all answers.
+  function setupOriginalForSession() {
+    const s = state.session;
+    s.origAllowed = !!state.originalFile && $('allowOrig').checked;
+    s.origRendered = false;
+    s.origOpens = 0;
+    $('origBtn').classList.toggle('hidden', !s.origAllowed);
+    $('origPanelBody').innerHTML = '';
+    closeOrigPanel();
+  }
+  function openOrigPanel() {
+    const s = state.session;
+    if (!s || !s.origAllowed) return;
+    closeMatPanel();
+    if (!s.origRendered) { renderOriginal($('origPanelBody'), true); s.origRendered = true; }
+    s.origOpens++;
+    $('origPanelName').textContent = state.originalFile.name;
+    $('origPanel').classList.remove('hidden');
+    document.body.classList.add('split-open');
+    $('origBtn').setAttribute('aria-expanded', 'true');
+    $('origClose').focus();
+  }
+  function closeOrigPanel() {
+    $('origPanel').classList.add('hidden');
+    document.body.classList.remove('split-open');
+    $('origBtn').setAttribute('aria-expanded', 'false');
+  }
+  $('origBtn').addEventListener('click', () => ($('origPanel').classList.contains('hidden') ? openOrigPanel() : closeOrigPanel()));
+  $('origClose').addEventListener('click', closeOrigPanel);
+
+  /* ---------------------------------------------------------------
    * Stage flow:  'cover'  ->  'active-test'  ->  'results'  ->  'cover'
    * ('setup' is the separate authoring screen for loading and editing tests.)
    * setView() is the only thing that switches screens. Questions are only rendered
    * by beginSession(), which only the cover page's Start Test button calls.
    * ------------------------------------------------------------- */
-  const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', 'active-test': 'test', results: 'results' };
+  const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', original: 'original', 'active-test': 'test', results: 'results' };
   state.view = 'cover';
 
   function setView(view) {
@@ -2031,6 +2235,7 @@ Queue = FIFO · Stack = LIFO`;
     // Questions exist in the page only during an active test
     if (view !== 'active-test') $('questionsWrap').innerHTML = '';
     if (view === 'cover') renderCover();
+    if (view === 'original') renderOriginalView();
     window.scrollTo(0, 0);
   }
 
@@ -2070,6 +2275,11 @@ Queue = FIFO · Stack = LIFO`;
 
   // Cover page: the only way into the active test
   $('coverStart').addEventListener('click', () => {
+    if (state.coverChoice === 'original') {
+      setView('original');
+      if (!state.originalFile) $('origInput').click();
+      return;
+    }
     const st = $('coverStatus');
     const res = prepareTest();
     if (res.error) { setStatus(st, res.error, 'err'); return; }
@@ -2111,6 +2321,8 @@ Queue = FIFO · Stack = LIFO`;
   // ~2.5 min per mark when the test gives marks, otherwise 1 min per MCQ and 3 per short answer
   const estMinutes = (list) => Math.max(1, Math.round(list.reduce((t, q) => t + (q.marks != null ? q.marks * 2.5 : q.type === 'short' ? 3 : 1), 0)));
 
+  const COVER_START_HTML = $('coverStart').innerHTML;
+
   function renderCover() {
     const all = state.questions;
     const nm = all.filter((q) => q.type === 'mcq').length;
@@ -2126,31 +2338,60 @@ Queue = FIFO · Stack = LIFO`;
       { v: 'short', t: 'Short answer test', n: ns, d: 'Type a word or a few sentences. Keyword-marked, or you mark it against a model answer.' },
     ];
     if (nm && ns) modes.unshift({ v: 'all', t: 'Mixed test', n: all.length, d: 'Every question, both types.' });
+    const of = state.originalFile;
+    modes.push({ v: 'original', t: 'Original file', n: 1, label: of ? `${KIND_LABEL[of.kind]} · ${fmtSize(of.size)}` : 'No file yet',
+      d: of ? `${of.name}, shown exactly as uploaded. No questions, no timer.` : 'Open any file and view it as-is, without making questions from it.' });
+    const testModes = modes.filter((m) => m.v !== 'original');
     let mode = $('testMode').value;
-    if (!modes.some((m) => m.v === mode && m.n)) mode = (modes.find((m) => m.n) || modes[0]).v;
+    if (!testModes.some((m) => m.v === mode && m.n)) mode = (testModes.find((m) => m.n) || testModes[0]).v;
     $('testMode').value = mode;
+    const selected = state.coverChoice === 'original' ? 'original' : mode;
 
     const wrap = $('modeCards');
     wrap.innerHTML = '';
     modes.forEach((m) => {
       const input = el('input', { type: 'radio', name: 'coverMode', value: m.v, id: `mode-${m.v}`, disabled: !m.n });
-      input.checked = m.v === mode;
+      input.checked = m.v === selected;
       input.addEventListener('change', () => {
-        $('testMode').value = m.v;
+        if (m.v === 'original') state.coverChoice = 'original';
+        else { state.coverChoice = 'test'; $('testMode').value = m.v; }
         wrap.querySelectorAll('.mode-card').forEach((c) => c.classList.toggle('sel', c.dataset.v === m.v));
         renderCoverMeta();
+        updateCoverStart();
       });
-      wrap.append(el('label', { class: 'mode-card' + (m.v === mode ? ' sel' : '') + (m.n ? '' : ' off'), 'data-v': m.v, for: `mode-${m.v}` },
+      wrap.append(el('label', { class: 'mode-card' + (m.v === selected ? ' sel' : '') + (m.n ? '' : ' off') + (m.v === 'original' ? ' orig-card' : ''), 'data-v': m.v, for: `mode-${m.v}` },
         input,
         el('span', { class: 't', text: m.t }),
-        el('span', { class: 'n', text: m.n ? `${m.n} question${m.n === 1 ? '' : 's'} · about ${estMinutes(all.filter((q) => m.v === 'all' || q.type === m.v))} min` : 'No questions of this type' }),
+        el('span', { class: 'n', text: m.label || (m.n ? `${m.n} question${m.n === 1 ? '' : 's'} · about ${estMinutes(all.filter((q) => m.v === 'all' || q.type === m.v))} min` : 'No questions of this type') }),
         el('span', { class: 'd', text: m.d })));
     });
     renderCoverMeta();
-    $('coverStart').disabled = !all.length;
+    updateCoverStart();
+  }
+
+  // Start button: begins the test, or opens the original file when that card is chosen
+  function updateCoverStart() {
+    const b = $('coverStart');
+    if (state.coverChoice === 'original') {
+      b.textContent = state.originalFile ? 'Open original file' : 'Open a file as-is';
+      b.disabled = false;
+    } else {
+      b.innerHTML = COVER_START_HTML;
+      b.disabled = !state.questions.length;
+    }
   }
 
   function renderCoverMeta() {
+    if (state.coverChoice === 'original') {
+      const f = state.originalFile;
+      const rows = f
+        ? [['File', f.name], ['Type', KIND_LABEL[f.kind]], ['Size', fmtSize(f.size)]]
+        : [['File', 'None yet'], ['Opens as', 'Exactly as uploaded'], ['Questions', 'None made from it']];
+      const dl = $('coverMeta');
+      dl.innerHTML = '';
+      rows.forEach(([k, v]) => dl.append(el('div', {}, el('dt', { text: k }), el('dd', { text: v }))));
+      return;
+    }
     const mode = $('testMode').value;
     const list = state.questions.filter((q) => mode === 'all' || q.type === mode);
     const nm = list.filter((q) => q.type === 'mcq').length;
@@ -2170,6 +2411,7 @@ Queue = FIFO · Stack = LIFO`;
       ['Layout', $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
       ['Marking', marking.join(' · ') || 'n/a'],
       ['Reference materials', mats ? `${mats} allowed` : 'None'],
+      ['Original file', state.originalFile ? ($('allowOrig').checked ? 'Can be opened beside the test' : 'Hidden during the test') : 'None'],
       ['Lockdown', $('autoSubmit').checked ? `Auto-submits after ${$('maxViol').value} violations` : 'Violations are logged'],
       list.some((q) => q.marks != null)
         ? ['Total marks', String(list.reduce((t, q) => t + (q.marks || 0), 0))]
@@ -2201,6 +2443,7 @@ Queue = FIFO · Stack = LIFO`;
       submitted: false,
     };
     setupMaterialsForSession();
+    setupOriginalForSession();
     hideTimeWarning();
     document.body.classList.add('locked');
     setView('active-test');
@@ -2342,6 +2585,7 @@ Queue = FIFO · Stack = LIFO`;
     const s = state.session;
     if (!s || s.submitted || s.layout !== 'single' || $('test').classList.contains('hidden')) return;
     if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('matPanel').classList.contains('hidden')) return;
+    if (e.target && e.target.closest && e.target.closest('#origPanel')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type !== 'radio'))) return;
@@ -2518,8 +2762,13 @@ Queue = FIFO · Stack = LIFO`;
 
   // Clicked outside the browser / Alt+Tab / another window took focus
   window.addEventListener('blur', () => {
-    // Ignore blur caused by our own confirm modal etc. (none use native dialogs)
-    addViolation('Browser window lost focus');
+    // Clicking into the original file's embedded PDF viewer moves focus into that frame,
+    // which the browser reports as a blur. That is not leaving the test.
+    setTimeout(() => {
+      const a = document.activeElement;
+      if (a && a.tagName === 'IFRAME' && a.closest('#origPanel')) return;
+      addViolation('Browser window lost focus');
+    }, 0);
   });
 
   /* ---------------------------------------------------------------
@@ -2552,7 +2801,7 @@ Queue = FIFO · Stack = LIFO`;
       return;
     }
     // Esc is captured when Keyboard Lock is active (Chromium); swallow it.
-    if (k === 'escape') { e.preventDefault(); closeMatPanel(); }
+    if (k === 'escape') { e.preventDefault(); closeMatPanel(); closeOrigPanel(); }
   }, true);
 
   window.addEventListener('beforeunload', (e) => {
@@ -2587,6 +2836,7 @@ Queue = FIFO · Stack = LIFO`;
 
     hideBlocker();
     closeMatPanel();
+    closeOrigPanel();
     hideTimeWarning();
     $('confirmModal').classList.add('hidden');
     document.body.classList.remove('locked');
@@ -2662,7 +2912,8 @@ Queue = FIFO · Stack = LIFO`;
     const taken = r.finishedAt - r.startTime;
 
     const reasonText = { manual: 'Submitted manually', time: 'Time ran out: submitted automatically', violations: `Auto-submitted after ${r.violations.length} lockdown violations` }[r.reason];
-    const matNote = r.materials && r.materials.length ? ` · Reference panel opened ${r.matOpens} time${r.matOpens === 1 ? '' : 's'}` : '';
+    const matNote = (r.materials && r.materials.length ? ` · Reference panel opened ${r.matOpens} time${r.matOpens === 1 ? '' : 's'}` : '')
+      + (r.origAllowed ? ` · Original file opened ${r.origOpens} time${r.origOpens === 1 ? '' : 's'}` : '');
     $('resultSub').textContent = `${reasonText} · ${new Date(r.finishedAt).toLocaleString()}${matNote}`;
 
     const hero = $('scoreHero');
@@ -2786,7 +3037,7 @@ Queue = FIFO · Stack = LIFO`;
   $('editTestBtn').addEventListener('click', () => setView('setup'));
 
   // Expose parsers for debugging in the console
-  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
+  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
 
   // Initial state: the cover page, with the sample test loaded so there is something to start
   loadSample();
