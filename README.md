@@ -10,6 +10,10 @@ A single-page app for taking timed practice tests in a fullscreen lockdown mode,
 - Reference materials (formula sheets, notes) open in a side panel without breaking lockdown.
 - Fullscreen enforcement, tab-switch and focus-loss detection, violation log, auto-submit, 5-minute warning.
 
+Every test opens on a cover page (title, instructions, test mode, question count, time limit, marks); questions only appear after **Start Test**. Retake and Back to menu return to the cover page.
+
+Exam-style PDFs are supported too: "Question 3 (Two parts; 8 marks in total): …" with parts "(a) (6 marks): …" become one short-answer question per part, each showing its question's setup, its marks, and an image of the original PDF page so tables and formulas stay readable. The time limit is read from the cover ("You have 3 hours").
+
 Everything runs in the browser. Uploaded files never leave your computer.
 
 ## Using your own question bank

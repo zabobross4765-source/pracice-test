@@ -306,6 +306,34 @@
     .q-edit .head .badge { max-width: 100%; }
   }
 
+  /* Exam questions: part labels, shared setup, original pages */
+  .q-meta { font: 600 11px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); margin-bottom: 10px; }
+  .ctx { border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 12px; background: var(--surface-2); }
+  .ctx summary, .pages-view summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .ctx-text { white-space: pre-wrap; font-size: 14px; margin-top: 8px; overflow-x: auto; }
+  .pages-view { margin-top: 12px; }
+  .pages-view img { display: block; width: 100%; max-width: 820px; height: auto; margin-top: 8px; border: 1px solid var(--border); background: #ffffff; }
+  .q-edit .ctx { margin: 8px 0; }
+  .q-edit .ctx textarea { margin-top: 8px; font-size: 13px; }
+
+  /* Cover page */
+  .cover-intro { white-space: pre-wrap; color: var(--muted); max-width: 68ch; margin: 0 0 22px; }
+  .mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+  .mode-card { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--surface); }
+  .mode-card:hover { border-color: var(--text); }
+  .mode-card input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .mode-card .t { font-weight: 700; font-size: 16px; }
+  .mode-card .n { font: 600 13px var(--font-mono); color: var(--ink); }
+  .mode-card .d { font-size: 13px; color: var(--muted); }
+  .mode-card.sel { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+  .mode-card.sel .t::after { content: " ✓"; }
+  .mode-card.off { opacity: .5; cursor: not-allowed; }
+  .mode-card:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .cover-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0; margin: 18px 0 0; border: 1px solid var(--border); }
+  .cover-meta > div { padding: 10px 14px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); min-width: 0; }
+  .cover-meta dt { font: 600 10.5px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .cover-meta dd { margin: 0; font-weight: 600; }
+
   /* Detected introduction */
   .intro-box { border: 1px dashed var(--border); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 14px; background: var(--surface-2); }
   .intro-box summary { font-weight: 600; font-size: 14px; color: var(--text); }
@@ -360,7 +388,28 @@
 <body>
 
 <!-- ===================== SETUP SCREEN ===================== -->
-<section id="setup" class="wrap">
+<!-- ===================== COVER (stage 1 of 3) ===================== -->
+<section id="cover" class="wrap" aria-labelledby="coverTitle">
+  <span class="eyebrow">Practice exam · Cover page</span>
+  <h1 id="coverTitle">Practice test</h1>
+  <div id="coverIntro" class="cover-intro"></div>
+
+  <div class="card">
+    <h2><span class="part">Choose your test</span>Test mode</h2>
+    <div id="modeCards" class="mode-cards" role="radiogroup" aria-label="Test mode"></div>
+    <dl id="coverMeta" class="cover-meta"></dl>
+    <p class="note" style="margin:14px 0 0">The test opens in fullscreen lockdown. Leaving fullscreen, switching tabs or clicking outside the window is logged as a violation.</p>
+    <div id="coverStatus" class="status"></div>
+    <div class="row" style="margin-top:6px">
+      <button id="coverStart" class="primary big"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Start Test</button>
+      <span class="spacer"></span>
+      <button id="coverEdit">Edit test or load another</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== SETUP (authoring) ===================== -->
+<section id="setup" class="wrap hidden">
   <span class="eyebrow">Practice exam</span>
   <h1>Lockdown Practice Test</h1>
   <p class="sub">Upload or paste a practice test, check the parsed questions, then start a timed session in lockdown mode.</p>
@@ -482,7 +531,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
 
   <div class="card">
-    <h2><span class="part">Part 5</span>Settings &amp; start</h2>
+    <h2><span class="part">Part 5</span>Settings</h2>
     <div class="settings">
       <label class="field"><span>Question types</span><select id="testMode"><option value="all">Mixed: all questions</option><option value="mcq">Multiple choice only</option><option value="short">Short answer only</option></select></label>
       <label class="field"><span>Layout</span><select id="layoutMode"><option value="list">All questions on one page</option><option value="single">One question at a time</option></select></label>
@@ -494,9 +543,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     </div>
     <div id="startStatus" class="status"></div>
     <div class="row" style="margin-top:8px">
-      <button id="startBtn" class="primary big"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Start Test &amp; Lock Browser</button>
+      <button id="startBtn" class="primary big">Continue to cover page →</button>
     </div>
-    <p class="note" style="margin-top:12px">Lockdown mode puts the page in fullscreen, blocks copy/paste, right-click and common shortcuts, and logs a violation whenever you leave fullscreen, switch tabs or the window loses focus. Reference materials open inside the locked page, so using them is not a violation.</p>
+    <p class="note" style="margin-top:12px">The test starts from its cover page. Lockdown begins when you press Start Test there: it puts the page in fullscreen, blocks copy/paste, right-click and common shortcuts, and logs a violation whenever you leave fullscreen, switch tabs or the window loses focus. Reference materials open inside the locked page, so using them is not a violation.</p>
   </div>
 </section>
 
@@ -553,7 +602,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
   <div class="row">
     <button id="retakeBtn" class="primary">Retake test</button>
-    <button id="newTestBtn">Back to setup</button>
+    <button id="newTestBtn">Back to menu</button>
+    <button id="editTestBtn">Edit test or load another</button>
   </div>
 </section>
 
@@ -637,6 +687,11 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       keywordMode: q.keywordMode === 'all' ? 'all' : 'any',
       modelAnswer: q.modelAnswer || '',
       explanation: q.explanation || '',
+      // Exam questions: "Question 2(b)", marks, shared setup text, PDF pages it appears on
+      label: q.label || '',
+      marks: typeof q.marks === 'number' ? q.marks : null,
+      context: q.context || '',
+      pages: Array.isArray(q.pages) ? q.pages.slice() : [],
     };
   }
   const hasKey = (q) => (q.type === 'short' ? q.accepted.length > 0 || !!q.modelAnswer.trim() : q.answer >= 0);
@@ -776,7 +831,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
     /^(?:page|pg\.?|p\.)\s*\d+\b.*$/i,                                    // "Page 3 – Biology Midterm"
     /^(?:\(?continued\)?|continued?\s+(?:on\s+)?(?:the\s+)?(?:next|following|back)\s+(?:page|side)|go\s+on(?:\s+to\s+the\s+next\s+page)?|please\s+turn\s+over|turn\s+over|p\.?\s?t\.?\s?o\.?|stop|end\s+of\s+(?:the\s+)?(?:test|exam|quiz|section|part|paper)|this\s+page\s+(?:is\s+)?(?:intentionally\s+)?(?:left\s+)?blank)[\s.!→>\-–—]*$/i,
     /(?:^©|copyright\s*(?:©|\(c\))?\s*\d{4}|all\s+rights\s+reserved)/i,
-    /^(?:name|date|class|period|teacher|instructor|student(?:\s*(?:id|number|no\.?))?|id|score|grade|mark|marks|signature|candidate(?:\s+number)?)\s*[:#]?\s*(?:_{2,}|\.{4,}|$).*$/i,
+    /^(?:name|date|class|period|teacher|instructor|student(?:\s*(?:id|number|no\.?))?|id|score|grade|mark|marks|(?:student\s+)?signature|candidate(?:\s+number)?)\s*[:#]?\s*(?:_{2,}|\.{4,}|$).*$/i,
     /^[_\-=.·•*~\s]{3,}$/,                                                // rules / underscores
     /^(?:https?:\/\/|www\.)\S+$/i,
     /^(?:section|part|unit|chapter|module)\s+(?:[A-Z]|\d{1,3}|[IVXLC]+)\b[^?]*$/i,   // headings (no "?")
@@ -786,10 +841,41 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   const KEY_HEAD = /^(?:answer\s*key|answers|key|solutions?|answer\s+sheet|marking\s+(?:scheme|key)|correct\s+answers)\s*:?$/i;
   const DIRECTIONS = /^(?:general\s+)?(?:directions|instructions)\b/i;
 
-  function parseText(text) {
+  // Exam-style layout: "Question 3 (Two parts; 8 marks in total): …" with parts "(a) (6 marks): …"
+  const RE_EXAM_Q = /^(?:question|problem|exercise)\s*(\d{1,3})\b\s*[.):]?\s*(.*)$/i;
+  const RE_PART = /^(?:part\s*)?\(([a-z])\)\s*(?:\((\d+(?:\.\d+)?)\s*marks?\)\s*)?[:.]?\s*(.*)$/i;
+  const RE_MARKS = /\(([^()]*?)(\d+(?:\.\d+)?)\s*marks?(?:\s+in\s+total)?\)\s*:?\s*/i;
+  // Pages at the end of an exam that are not questions
+  const RE_BACK_MATTER = /^(?:use\s+th(?:ese|is)\s+(?:last\s+)?(?:\w+\s+)?(?:pages?|space|sheets?)\s+only|extra\s+(?:answer\s+)?(?:pages?|space|sheets?)\b|this\s+page\s+(?:is\s+)?for\s+rough\s+work)/i;
+
+  // Joins PDF lines: wrapped prose (long lines) flows into a paragraph, short lines such as
+  // table rows and list items keep their own line.
+  function smartJoin(lines) {
+    let out = '';
+    let prevRaw = '';
+    for (const l of lines) {
+      if (!out) { out = l; prevRaw = l; continue; }
+      const listItem = /^\s*(?:\d{1,2}[.)]|[•\-–])\s/.test(l);
+      // Join when the previous source line was a full (wrapped) line of prose, or when a
+      // sentence obviously carries on (ends mid-sentence, next line starts in lower case)
+      const flows = !listItem && (prevRaw.length >= 70 || (/[a-z,]$/.test(prevRaw) && /^[a-z(]/.test(l)));
+      out += (flows ? ' ' : '\n') + l;
+      prevRaw = l;
+    }
+    return out;
+  }
+
+  function parseText(text, opts = {}) {
+    // Lines with the PDF page they came from ("\f" separates pages in extracted PDF text)
     let removed = 0;
-    let lines = normalizeText(text).split('\n').map((l) => l.trim())
-      .filter((l) => { if (l && isNoise(l)) { removed++; return false; } return true; });
+    let pg = 1;
+    const items = [];
+    for (const raw of normalizeText(text).split('\n')) {
+      if (raw.includes('\f')) { pg++; items.push({ t: '', pg }); continue; }
+      const t = raw.trim();
+      if (t && !opts.sub && isNoise(t)) { removed++; continue; }
+      items.push({ t, pg });
+    }
     const qs = [];
     const introParts = [];
     let cur = null;
@@ -805,134 +891,153 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
 
     // A trailing "Answer Key" section: lift it out and use it as the key
     let keyEntries = null;
-    for (let i = lines.length - 1; i > 0; i--) {
-      if (KEY_HEAD.test(lines[i])) {
-        const entries = parseKey(lines.slice(i + 1).join('\n'));
-        if (Object.keys(entries).length) { keyEntries = entries; lines = lines.slice(0, i); }
-        break;
-      }
-    }
-    const hasNumbered = lines.filter((l) => reQ.test(l)).length >= 2;
-
-    const finish = () => {
-      if (!cur) return;
-      const q = cur;
-      cur = null;
-      q.question = q.question.trim();
-      q.choices = q.choices.map((c) => c.trim()).filter(Boolean);
-      const isMcq = q.type ? q.type === 'mcq' : q.choices.length >= 2;
-      q.type = isMcq ? 'mcq' : 'short';
-      if (isMcq) {
-        if (q.answerRaw != null && q.answer === -1) q.answer = resolveAnswer(q.answerRaw, q.choices, { numberIsZeroBased: false });
-      } else {
-        q.choices = [];
-        if (q.answerRaw != null) {
-          if (!q.accepted.length) q.accepted = splitAccepted(q.answerRaw);
-          if (!q.modelAnswer) q.modelAnswer = q.answerRaw;
+    if (!opts.sub) {
+      for (let i = items.length - 1; i > 0; i--) {
+        if (KEY_HEAD.test(items[i].t)) {
+          const entries = parseKey(items.slice(i + 1).map((x) => x.t).join('\n'));
+          if (Object.keys(entries).length) { keyEntries = entries; items.length = i; }
+          break;
         }
       }
-      q.explanation = q.explanation.trim();
-      q.modelAnswer = q.modelAnswer.trim();
-      delete q.answerRaw; delete q.lastField;
-      const attached = q.answer >= 0 || q.accepted.length || q.modelAnswer || q.explanation;
-      // Un-numbered, untagged text with nothing attached, before any question: cover / intro
-      if (!isMcq && !q.numbered && !q.typed && !attached && !qs.length) {
-        if (q.question) introParts.push(q.question);
-        return;
-      }
-      if (q.question || q.choices.length) qs.push(q);
-    };
-    const start = (text, num) => {
-      finish();
-      let typed = null;
-      const t = text.match(reTag);
-      if (t) { typed = /^(?:mcq|multiple)/i.test(t[1]) ? 'mcq' : 'short'; text = text.slice(t[0].length); }
-      cur = { question: text, choices: [], answer: -1, answerRaw: null, accepted: [], keywordMode: 'any', modelAnswer: '', explanation: '',
-        type: typed, typed: !!typed, numbered: num != null, num: num ?? null, lastField: null };
-    };
+    }
 
-    let blankSeen = false, inDirections = false;
-    for (const line of lines) {
-      if (!line) {
-        blankSeen = true;
-        if (inDirections && !hasNumbered) inDirections = false;
-        if (cur) cur.lastField = null;
-        continue;
-      }
-      const afterBlank = blankSeen;
-      blankSeen = false;
-      const isQ = reQ.test(line);
+    const examMode = !opts.sub && items.filter((x) => RE_EXAM_Q.test(x.t)).length >= 2;
+    if (examMode) {
+      qs.push(...parseExam(items, introParts));
+    } else {
+      const hasNumbered = !opts.sub && items.filter((x) => reQ.test(x.t)).length >= 2;
+      let curPg = 1;
 
-      // "Directions: …" blocks (cover page or between sections) are not questions
-      if (DIRECTIONS.test(line) && !isQ) { finish(); inDirections = true; introParts.push(line); continue; }
-      if (inDirections) {
-        if (isQ) inDirections = false;
-        else { introParts.push(line); continue; }
-      }
-
-      if (cur) {
-        let m;
-        if ((m = line.match(reExpl))) { cur.explanation = m[1]; cur.lastField = 'explanation'; continue; }
-        if ((m = line.match(reKw))) { cur.accepted = splitAccepted(m[1]); cur.lastField = null; continue; }
-        if ((m = line.match(reModel))) { cur.modelAnswer = m[1]; cur.lastField = 'model'; continue; }
-        if ((m = line.match(reMatch))) { cur.keywordMode = m[1].toLowerCase(); continue; }
-        if ((m = line.match(reType))) { cur.type = /^(?:mcq|mc|multiple)/i.test(m[1]) ? 'mcq' : 'short'; cur.typed = true; continue; }
-      }
-
-      const mAns = line.match(reAns);
-      if (mAns && cur) { cur.answerRaw = mAns[1].trim(); cur.lastField = null; continue; }
-
-      const mC = line.match(reChoice);
-      if (mC && cur && cur.type !== 'short') {
-        const idx = LETTERS.indexOf(mC[2].toUpperCase());
-        // Only accept choices in sequence (A, then B, ...) to avoid false positives
-        if (idx === cur.choices.length) {
-          let txt = mC[3];
-          let starred = !!mC[1];
-          if (/\s*\*$/.test(txt) || /\((?:correct|✓)\)\s*$/i.test(txt)) {
-            starred = true;
-            txt = txt.replace(/\s*(\*|\((?:correct|✓)\))\s*$/i, '');
+      const finish = () => {
+        if (!cur) return;
+        const q = cur;
+        cur = null;
+        q.question = q.question.trim();
+        q.choices = q.choices.map((c) => c.trim()).filter(Boolean);
+        const isMcq = q.type ? q.type === 'mcq' : q.choices.length >= 2;
+        q.type = isMcq ? 'mcq' : 'short';
+        if (isMcq) {
+          if (q.answerRaw != null && q.answer === -1) q.answer = resolveAnswer(q.answerRaw, q.choices, { numberIsZeroBased: false });
+        } else {
+          q.choices = [];
+          if (q.answerRaw != null) {
+            if (!q.accepted.length) q.accepted = splitAccepted(q.answerRaw);
+            if (!q.modelAnswer) q.modelAnswer = q.answerRaw;
           }
-          cur.choices.push(txt);
-          cur.lastField = null;
-          if (starred) cur.answer = idx;
+        }
+        q.explanation = q.explanation.trim();
+        q.modelAnswer = q.modelAnswer.trim();
+        q.pages = [...q.pages].sort((a, b) => a - b);
+        delete q.answerRaw; delete q.lastField;
+        const attached = q.answer >= 0 || q.accepted.length || q.modelAnswer || q.explanation;
+        // Un-numbered, untagged text with nothing attached, before any question: cover / intro
+        if (!opts.sub && !isMcq && !q.numbered && !q.typed && !attached && !qs.length) {
+          if (q.question) introParts.push(q.question);
+          return;
+        }
+        if (q.question || q.choices.length) qs.push(q);
+      };
+      const start = (text, num) => {
+        finish();
+        let typed = null;
+        const t = text.match(reTag);
+        if (t) { typed = /^(?:mcq|multiple)/i.test(t[1]) ? 'mcq' : 'short'; text = text.slice(t[0].length); }
+        cur = { question: text, choices: [], answer: -1, answerRaw: null, accepted: [], keywordMode: 'any', modelAnswer: '', explanation: '',
+          type: typed, typed: !!typed, numbered: num != null, num: num ?? null, lastField: null, pages: new Set([curPg]) };
+      };
+
+      let blankSeen = false, inDirections = false;
+      const processLine = (line, afterBlank) => {
+        const isQ = reQ.test(line);
+
+        // "Directions: …" blocks (cover page or between sections) are not questions
+        if (!opts.sub && DIRECTIONS.test(line) && !isQ) { finish(); inDirections = true; introParts.push(line); return; }
+        if (inDirections) {
+          if (isQ) inDirections = false;
+          else { introParts.push(line); return; }
+        }
+
+        if (cur) {
+          let m;
+          if ((m = line.match(reExpl))) { cur.explanation = m[1]; cur.lastField = 'explanation'; return; }
+          if ((m = line.match(reKw))) { cur.accepted = splitAccepted(m[1]); cur.lastField = null; return; }
+          if ((m = line.match(reModel))) { cur.modelAnswer = m[1]; cur.lastField = 'model'; return; }
+          if ((m = line.match(reMatch))) { cur.keywordMode = m[1].toLowerCase(); return; }
+          if ((m = line.match(reType))) { cur.type = /^(?:mcq|mc|multiple)/i.test(m[1]) ? 'mcq' : 'short'; cur.typed = true; return; }
+        }
+
+        const mAns = line.match(reAns);
+        if (mAns && cur) { cur.answerRaw = mAns[1].trim(); cur.lastField = null; return; }
+
+        const mC = line.match(reChoice);
+        // Inside an exam question, "a. Predictors: …" is an SPSS footnote, not choice A
+        if (mC && cur && cur.type !== 'short' && !(opts.sub && /^[a-p]\.\s/.test(line))) {
+          const idx = LETTERS.indexOf(mC[2].toUpperCase());
+          // Only accept choices in sequence (A, then B, ...) to avoid false positives
+          if (idx === cur.choices.length) {
+            let txt = mC[3];
+            let starred = !!mC[1];
+            if (/\s*\*$/.test(txt) || /\((?:correct|✓)\)\s*$/i.test(txt)) {
+              starred = true;
+              txt = txt.replace(/\s*(\*|\((?:correct|✓)\))\s*$/i, '');
+            }
+            cur.choices.push(txt);
+            cur.lastField = null;
+            if (starred) cur.answer = idx;
+            return;
+          }
+        }
+
+        // In a sub-parse (one exam question) only the first numbered line starts the question;
+        // numbered lists inside it stay part of its text.
+        const mQ = line.match(reQ);
+        if (mQ && !(opts.sub && cur)) { start(mQ[2], parseInt(mQ[1], 10)); return; }
+
+        // Multi-line explanation / model answer
+        if (cur && cur.lastField === 'explanation') { cur.explanation += ' ' + line; return; }
+        if (cur && cur.lastField === 'model') { cur.modelAnswer += '\n' + line; return; }
+
+        // Continuation / un-numbered question
+        if (!cur || cur.answerRaw != null || (cur.answer !== -1 && cur.choices.length >= 2)) {
+          start(line, null);
+        } else if (cur.choices.length === 0) {
+          // Un-numbered test: a paragraph break before the first question ends the intro
+          if (afterBlank && !hasNumbered && !qs.length && !opts.sub) { introParts.push(cur.question); cur.question = line; }
+          else cur.question = opts.sub ? smartJoin([cur.question, line]) : cur.question + ' ' + line;
+        } else {
+          cur.choices[cur.choices.length - 1] += ' ' + line;
+        }
+      };
+
+      for (const { t: line, pg: p } of items) {
+        curPg = p;
+        if (!line) {
+          blankSeen = true;
+          if (inDirections && !hasNumbered) inDirections = false;
+          if (cur) cur.lastField = null;
           continue;
         }
+        const afterBlank = blankSeen;
+        blankSeen = false;
+        processLine(line, afterBlank);
+        if (cur) cur.pages.add(p);
       }
+      finish();
 
-      const mQ = line.match(reQ);
-      if (mQ) { start(mQ[2], parseInt(mQ[1], 10)); continue; }
-
-      // Multi-line explanation / model answer
-      if (cur && cur.lastField === 'explanation') { cur.explanation += ' ' + line; continue; }
-      if (cur && cur.lastField === 'model') { cur.modelAnswer += '\n' + line; continue; }
-
-      // Continuation / un-numbered question
-      if (!cur || cur.answerRaw != null || (cur.answer !== -1 && cur.choices.length >= 2)) {
-        start(line, null);
-      } else if (cur.choices.length === 0) {
-        // Un-numbered test: a paragraph break before the first question ends the intro
-        if (afterBlank && !hasNumbered && !qs.length) { introParts.push(cur.question); cur.question = line; }
-        else cur.question += ' ' + line;
-      } else {
-        cur.choices[cur.choices.length - 1] += ' ' + line;
+      // Numbered items before the first multiple-choice question that carry nothing and whose
+      // numbering restarts there (e.g. "1. Use a pencil … 1. What is…") are instructions.
+      const firstMcq = opts.sub ? -1 : qs.findIndex((q) => q.type === 'mcq');
+      if (firstMcq > 0) {
+        const restartAt = qs[firstMcq].num;
+        let k = 0;
+        while (k < firstMcq) {
+          const q = qs[k];
+          const bare = !q.typed && !q.accepted.length && !q.modelAnswer && !q.explanation;
+          if (!bare || (q.num != null && (restartAt == null || q.num < restartAt))) break;
+          k++;
+        }
+        if (k) introParts.push(...qs.splice(0, k).map((q) => q.question));
       }
-    }
-    finish();
-
-    // Numbered items before the first multiple-choice question that carry nothing and whose
-    // numbering restarts there (e.g. "1. Use a pencil … 1. What is…") are instructions.
-    const firstMcq = qs.findIndex((q) => q.type === 'mcq');
-    if (firstMcq > 0) {
-      const restartAt = qs[firstMcq].num;
-      let k = 0;
-      while (k < firstMcq) {
-        const q = qs[k];
-        const bare = !q.typed && !q.accepted.length && !q.modelAnswer && !q.explanation;
-        if (!bare || (q.num != null && (restartAt == null || q.num < restartAt))) break;
-        k++;
-      }
-      if (k) introParts.push(...qs.splice(0, k).map((q) => q.question));
     }
 
     if (keyEntries) {
@@ -949,14 +1054,81 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
         }
       });
     }
-    qs.intro = introParts.join('\n').trim();
+    qs.intro = (examMode ? smartJoin(introParts) : introParts.join('\n')).trim();
     qs.removed = removed;
     qs.keySection = !!keyEntries;
+    qs.exam = examMode;
     return qs;
+  }
+
+  // One "Question N" block → one question, or one question per lettered part with the
+  // block's setup (stem, tables) attached to each part as shared context.
+  function parseExam(items, introParts) {
+    const out = [];
+    let group = null;
+    let part = null;
+    let backMatter = false;
+    const subParse = (lines) => {
+      const q = parseText('1. ' + lines.join('\n'), { sub: true })[0];
+      return q || { type: 'short', question: smartJoin(lines), choices: [], answer: -1, accepted: [], keywordMode: 'any', modelAnswer: '', explanation: '' };
+    };
+    const flush = () => {
+      if (!group) return;
+      const stemLines = group.stem.filter(Boolean);
+      if (!group.parts.length) {
+        if (stemLines.length) {
+          const q = subParse(stemLines);
+          out.push({ ...q, label: `Question ${group.num}`, marks: group.marks, context: '', pages: [...group.pages].sort((a, b) => a - b) });
+        }
+      } else {
+        const context = smartJoin(stemLines);
+        group.parts.forEach((pt) => {
+          const q = subParse(pt.lines.filter(Boolean));
+          const pages = [...new Set([...group.stemPages, ...pt.pages])].sort((a, b) => a - b);
+          out.push({ ...q, label: `Question ${group.num}(${pt.letter})`, marks: pt.marks, context, pages });
+        });
+      }
+      group = null;
+      part = null;
+    };
+    for (const { t, pg } of items) {
+      if (!t) continue;
+      const mq = t.match(RE_EXAM_Q);
+      if (mq) {
+        flush();
+        backMatter = false;
+        let rest = mq[2];
+        let marks = null;
+        const mk = rest.match(RE_MARKS);
+        if (mk && mk.index <= 2) { marks = parseFloat(mk[2]); rest = rest.slice(0, mk.index) + rest.slice(mk.index + mk[0].length); }
+        group = { num: parseInt(mq[1], 10), marks, stem: rest.trim() ? [rest.trim()] : [], stemPages: new Set([pg]), pages: new Set([pg]), parts: [] };
+        continue;
+      }
+      if (RE_BACK_MATTER.test(t)) { flush(); backMatter = true; continue; }
+      if (backMatter) continue;
+      if (!group) { introParts.push(t); continue; }
+      group.pages.add(pg);
+      const mp = t.match(RE_PART);
+      if (mp) {
+        const letter = mp[1].toLowerCase();
+        const expected = String.fromCharCode(97 + group.parts.length);
+        const textAfter = mp[3] || '';
+        if (letter === expected && (mp[2] || (textAfter.length > 15 && !/^(?:and|or|to|through|&|,)\b/i.test(textAfter)))) {
+          part = { letter, marks: mp[2] ? parseFloat(mp[2]) : null, lines: [textAfter], pages: new Set([pg]) };
+          group.parts.push(part);
+          continue;
+        }
+      }
+      if (part) { part.lines.push(t); part.pages.add(pg); }
+      else { group.stem.push(t); group.stemPages.add(pg); }
+    }
+    flush();
+    return out;
   }
 
   function cleanupNote(qs, extraRemoved) {
     const parts = [];
+    if (qs.exam) parts.push('read it as an exam: each lettered part is its own question, shown with its question\'s setup');
     if (qs.intro) parts.push('set aside the introduction/instructions (shown above the questions during the test)');
     const r = (qs.removed || 0) + (extraRemoved || 0);
     if (r) parts.push(`removed ${r} line${r === 1 ? '' : 's'} of page numbers, headers/footers and other non-question text`);
@@ -1132,7 +1304,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
         });
       });
     }
-    return pages.map((pl) => pl.join('\n')).join('\n\n');
+    return pages.map((pl) => pl.join('\n')).join('\n\f\n');   // \f marks page breaks
   }
 
   function setStatus(el, msg, kind) {
@@ -1162,6 +1334,12 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       $('rawText').value = text;
       const qs = parseAny(text, ext === 'txt' || ext === 'pdf' ? 'text' : ext);
       const found = ingestQuestions(qs, file.name, true);
+      if (ext === 'pdf' && qs.length) {
+        try {
+          state.pageImages = (await renderPdfPages(file, (p, n) => setStatus(st, `Saving page images from ${file.name}: page ${p}/${n}…`))).pages;
+        } catch (err) { state.pageImages = []; }
+        renderEditor();
+      }
       if (qs.length) {
         setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)} Check them below.`, 'ok');
       } else {
@@ -1194,7 +1372,8 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       setStatus(st, 'Parse error: ' + err.message, 'err');
     }
   });
-  $('sampleBtn').addEventListener('click', () => {
+  $('sampleBtn').addEventListener('click', () => loadSample());
+  function loadSample() {
     $('rawText').value = SAMPLE;
     const qs = parseText(SAMPLE);
     const found = ingestQuestions(qs, 'the sample test', true);
@@ -1203,7 +1382,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       renderMatList();
     }
     setStatus($('fileStatus'), `Sample test loaded: ${qs.length} questions, plus a sample reference sheet.${cleanupNote(qs, 0)}${detectedNote(found)}`, 'ok');
-  });
+  }
   $('clearBtn').addEventListener('click', () => {
     $('rawText').value = '';
     if (state.key && state.key.detected) state.key = null;
@@ -1231,10 +1410,17 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   // fresh = a newly loaded test (file or sample), not a re-parse of the edited text box
   function ingestQuestions(qs, source, fresh) {
     const intro = qs.intro;
+    if (fresh) state.sourceName = /\.\w{2,4}$/.test(source) ? source.replace(/\.\w{2,4}$/, '').replace(/[_-]+/g, ' ') : '';
     qs = qs.map(normQ);
     const found = qs.filter(hasKey).length;
     const keyed = qs.filter((q) => hasKey(q) || q.explanation).length;
     if (intro) state.intro = intro;
+    if (fresh) state.pageImages = [];
+    if (fresh && source !== 'the sample test' && state.materials.some((m) => m.sample)) {
+      state.materials = state.materials.filter((m) => !m.sample);
+      renderMatList();
+    }
+    if (fresh && intro) { const mins = detectDuration(intro); if (mins) $('duration').value = mins; }
     else if (fresh) state.intro = '';
     if (fresh && !keyed) {
       // Detected answers belonged to the previous test
@@ -1330,10 +1516,10 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       show.checked = state.showIntro;
       show.addEventListener('change', () => { state.showIntro = show.checked; });
       root.append(el('details', { class: 'intro-box' },
-        el('summary', {}, 'Introduction / instructions detected · not counted as a question'),
+        el('summary', {}, 'Cover page / instructions detected · shown on the cover page, not counted as a question'),
         ta,
         el('div', { class: 'row', style: 'margin-top:8px' },
-          el('label', { class: 'inline note' }, show, 'Show it above the questions during the test'),
+          el('label', { class: 'inline note' }, show, 'Also show it above the questions during the test'),
           el('span', { class: 'spacer' }),
           el('button', { class: 'small danger', onclick: () => { state.intro = ''; renderEditor(); } }, 'Discard'))));
     }
@@ -1360,7 +1546,9 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
         $(`q-${qi}-type`)?.focus();
       });
       card.append(el('div', { class: 'head' },
-        el('span', { class: 'num', text: `Q${qi + 1}` }), typeSel, badge, el('span', { class: 'spacer' }),
+        el('span', { class: 'num', text: `Q${qi + 1}` }), typeSel,
+        (q.label || q.marks != null || q.pages.length) ? el('span', { class: 'note', text: [q.label, q.marks != null ? `${q.marks} marks` : '', q.pages.length ? `p. ${q.pages.join(', ')}` : ''].filter(Boolean).join(' · ') }) : null,
+        badge, el('span', { class: 'spacer' }),
         el('button', { class: 'small', title: 'Move up', 'aria-label': `Move question ${qi + 1} up`, disabled: qi === 0, onclick: () => { [state.questions[qi - 1], state.questions[qi]] = [state.questions[qi], state.questions[qi - 1]]; renderEditor(); } }, '↑'),
         el('button', { class: 'small', title: 'Move down', 'aria-label': `Move question ${qi + 1} down`, disabled: qi === state.questions.length - 1, onclick: () => { [state.questions[qi + 1], state.questions[qi]] = [state.questions[qi], state.questions[qi + 1]]; renderEditor(); } }, '↓'),
         el('button', { class: 'small danger', 'aria-label': `Delete question ${qi + 1}`, onclick: () => { state.questions.splice(qi, 1); renderEditor(); } }, 'Delete')
@@ -1369,6 +1557,12 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       ta.value = q.question;
       ta.addEventListener('input', () => { q.question = ta.value; });
       card.append(ta);
+      if (q.context) {
+        const cta = el('textarea', { rows: 5, id: `q-${qi}-ctx`, 'aria-label': `Question ${qi + 1} setup` });
+        cta.value = q.context;
+        cta.addEventListener('input', () => { q.context = cta.value; });
+        card.append(el('details', { class: 'ctx' }, el('summary', {}, 'Question setup (shared by its parts)'), cta));
+      }
 
       if (q.type === 'mcq') {
         q.choices.forEach((c, ci) => {
@@ -1444,6 +1638,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
    * ------------------------------------------------------------- */
   state.detectedKey = null;  // answers found inside the question file
   state.intro = '';          // cover page / directions set aside by the parser
+  state.pageImages = [];     // rendered pages of the loaded PDF test (data URLs)
   state.showIntro = true;
   state.key = null;          // { entries: { [questionIndex]: {v, zb} }, count, source }
   state.hideAnswers = false;
@@ -1818,10 +2013,31 @@ Queue = FIFO · Stack = LIFO`;
   /* ---------------------------------------------------------------
    * Start test
    * ------------------------------------------------------------- */
-  $('startBtn').addEventListener('click', () => {
-    const st = $('startStatus');
+  /* ---------------------------------------------------------------
+   * Stage flow:  'cover'  ->  'active-test'  ->  'results'  ->  'cover'
+   * ('setup' is the separate authoring screen for loading and editing tests.)
+   * setView() is the only thing that switches screens. Questions are only rendered
+   * by beginSession(), which only the cover page's Start Test button calls.
+   * ------------------------------------------------------------- */
+  const VIEW_SECTIONS = { setup: 'setup', cover: 'cover', 'active-test': 'test', results: 'results' };
+  state.view = 'cover';
+
+  function setView(view) {
+    // The test screen can't be shown without a session started from the cover page
+    if (view === 'active-test' && !(state.session && !state.session.submitted)) view = 'cover';
+    if (view === 'results' && !state.lastResult) view = 'cover';
+    state.view = view;
+    for (const [v, id] of Object.entries(VIEW_SECTIONS)) $(id).classList.toggle('hidden', v !== view);
+    // Questions exist in the page only during an active test
+    if (view !== 'active-test') $('questionsWrap').innerHTML = '';
+    if (view === 'cover') renderCover();
+    window.scrollTo(0, 0);
+  }
+
+  // Validates the editor's questions and returns the ones for the chosen mode
+  function prepareTest() {
     const prepared = state.questions.map((q) => {
-      const base = { type: q.type, question: q.question.trim(), explanation: (q.explanation || '').trim() };
+      const base = { type: q.type, question: q.question.trim(), explanation: (q.explanation || '').trim(), label: q.label, marks: q.marks, context: (q.context || '').trim(), pages: q.pages.slice() };
       if (q.type === 'short') {
         return { ...base, choices: [], answer: -1, accepted: q.accepted.map((a) => a.trim()).filter(Boolean), keywordMode: q.keywordMode, modelAnswer: (q.modelAnswer || '').trim() };
       }
@@ -1829,29 +2045,44 @@ Queue = FIFO · Stack = LIFO`;
       const keep = q.choices.map((c, i) => [c.trim(), i]).filter(([c]) => c !== '');
       return { ...base, choices: keep.map(([c]) => c), answer: keep.findIndex(([, i]) => i === q.answer), accepted: [], keywordMode: 'any', modelAnswer: '' };
     });
-    if (!prepared.length) { setStatus(st, 'Add at least one question first (try "Load sample test").', 'err'); return; }
+    if (!prepared.length) return { error: 'Add at least one question first (try "Load sample test").' };
     const bad = prepared.findIndex((q) => !q.question || (q.type === 'mcq' && q.choices.length < 2));
     if (bad !== -1) {
-      setStatus(st, prepared[bad].question
+      return { error: prepared[bad].question
         ? `Question ${bad + 1} is multiple choice but has fewer than two choices. Add choices or switch it to short answer.`
-        : `Question ${bad + 1} has no question text.`, 'err');
-      return;
+        : `Question ${bad + 1} has no question text.` };
     }
+    const minutes = parseFloat($('duration').value);
+    if (!(minutes > 0)) return { error: 'Set a test duration greater than 0 minutes.' };
     const mode = $('testMode').value;
     const qs = mode === 'all' ? prepared : prepared.filter((q) => q.type === mode);
-    if (!qs.length) { setStatus(st, `This test has no ${mode === 'mcq' ? 'multiple-choice' : 'short-answer'} questions. Choose another option under "Question types".`, 'err'); return; }
-    const minutes = parseFloat($('duration').value);
-    if (!(minutes > 0)) { setStatus(st, 'Set a test duration greater than 0 minutes.', 'err'); return; }
+    if (!qs.length) return { error: `This test has no ${mode === 'mcq' ? 'multiple-choice' : 'short-answer'} questions. Choose another test mode.` };
+    return { qs, minutes };
+  }
+
+  // Setup screen: validate, then go to the cover page (no questions, no lockdown yet)
+  $('startBtn').addEventListener('click', () => {
+    const res = prepareTest();
+    if (res.error && !/test mode/.test(res.error)) { setStatus($('startStatus'), res.error, 'err'); return; }
+    setStatus($('startStatus'), '');
+    setView('cover');
+  });
+
+  // Cover page: the only way into the active test
+  $('coverStart').addEventListener('click', () => {
+    const st = $('coverStatus');
+    const res = prepareTest();
+    if (res.error) { setStatus(st, res.error, 'err'); return; }
     setStatus(st, '');
 
     // Must be called synchronously inside the click (user gesture) handler.
     const fsPromise = requestFs();
 
-    let order = qs.map((_, i) => i);
+    const order = res.qs.map((_, i) => i);
     if ($('shuffle').checked) {
       for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
     }
-    beginSession(order.map((i) => qs[i]), minutes);
+    beginSession(order.map((i) => res.qs[i]), res.minutes);
 
     fsPromise.then(() => {
       lockKeyboard();
@@ -1859,6 +2090,95 @@ Queue = FIFO · Stack = LIFO`;
       showBlocker('Fullscreen could not be enabled. Click below to enter fullscreen and begin.', false);
     });
   });
+  $('coverEdit').addEventListener('click', () => setView('setup'));
+
+  // Cover title = first line of the detected cover page / intro, else the file name
+  function coverTitleAndIntro() {
+    const lines = (state.intro || '').split('\n').map((l) => l.trim()).filter(Boolean);
+    // A course code near the top ("STAT 252") makes the best title, plus the line under it
+    const ci = lines.slice(0, 8).findIndex((l) => l.length <= 60 && /\b[A-Z]{2,5}\s?\d{3,4}[A-Z]?\b/.test(l));
+    if (ci !== -1) {
+      const next = lines[ci + 1];
+      const two = !!next && next.length <= 40 && next === next.toUpperCase() && /[A-Z]/.test(next);
+      return { title: two ? `${lines[ci]} · ${next}` : lines[ci], intro: lines.filter((_, i) => i !== ci && !(two && i === ci + 1)).join('\n') };
+    }
+    if (lines.length && lines[0].length <= 90 && !DIRECTIONS.test(lines[0])) {
+      return { title: lines[0], intro: lines.slice(1).join('\n') };
+    }
+    return { title: state.sourceName || 'Practice test', intro: lines.join('\n') };
+  }
+
+  // ~2.5 min per mark when the test gives marks, otherwise 1 min per MCQ and 3 per short answer
+  const estMinutes = (list) => Math.max(1, Math.round(list.reduce((t, q) => t + (q.marks != null ? q.marks * 2.5 : q.type === 'short' ? 3 : 1), 0)));
+
+  function renderCover() {
+    const all = state.questions;
+    const nm = all.filter((q) => q.type === 'mcq').length;
+    const ns = all.length - nm;
+    const { title, intro } = coverTitleAndIntro();
+    $('coverTitle').textContent = title;
+    $('coverIntro').textContent = intro || (all.length
+      ? 'Read each question carefully and answer all of them before you submit. Your answers are checked when you submit.'
+      : 'No test is loaded yet. Choose "Edit test or load another" to upload or paste one.');
+
+    const modes = [
+      { v: 'mcq', t: 'Multiple choice test', n: nm, d: 'Pick one option per question. Marked as soon as you submit.' },
+      { v: 'short', t: 'Short answer test', n: ns, d: 'Type a word or a few sentences. Keyword-marked, or you mark it against a model answer.' },
+    ];
+    if (nm && ns) modes.unshift({ v: 'all', t: 'Mixed test', n: all.length, d: 'Every question, both types.' });
+    let mode = $('testMode').value;
+    if (!modes.some((m) => m.v === mode && m.n)) mode = (modes.find((m) => m.n) || modes[0]).v;
+    $('testMode').value = mode;
+
+    const wrap = $('modeCards');
+    wrap.innerHTML = '';
+    modes.forEach((m) => {
+      const input = el('input', { type: 'radio', name: 'coverMode', value: m.v, id: `mode-${m.v}`, disabled: !m.n });
+      input.checked = m.v === mode;
+      input.addEventListener('change', () => {
+        $('testMode').value = m.v;
+        wrap.querySelectorAll('.mode-card').forEach((c) => c.classList.toggle('sel', c.dataset.v === m.v));
+        renderCoverMeta();
+      });
+      wrap.append(el('label', { class: 'mode-card' + (m.v === mode ? ' sel' : '') + (m.n ? '' : ' off'), 'data-v': m.v, for: `mode-${m.v}` },
+        input,
+        el('span', { class: 't', text: m.t }),
+        el('span', { class: 'n', text: m.n ? `${m.n} question${m.n === 1 ? '' : 's'} · about ${estMinutes(all.filter((q) => m.v === 'all' || q.type === m.v))} min` : 'No questions of this type' }),
+        el('span', { class: 'd', text: m.d })));
+    });
+    renderCoverMeta();
+    $('coverStart').disabled = !all.length;
+  }
+
+  function renderCoverMeta() {
+    const mode = $('testMode').value;
+    const list = state.questions.filter((q) => mode === 'all' || q.type === mode);
+    const nm = list.filter((q) => q.type === 'mcq').length;
+    const ns = list.length - nm;
+    const selfMarked = list.filter((q) => q.type === 'short' && !q.accepted.length).length;
+    const noKey = list.filter((q) => q.type === 'mcq' && q.answer < 0).length;
+    const mats = $('allowMat').checked ? state.materials.length : 0;
+    const dur = parseFloat($('duration').value) || 0;
+    const marking = [];
+    if (list.length - selfMarked - noKey) marking.push(`${list.length - selfMarked - noKey} marked automatically`);
+    if (selfMarked) marking.push(`${selfMarked} you mark yourself`);
+    if (noKey) marking.push(`${noKey} without an answer key`);
+    const rows = [
+      ['Questions', `${list.length}` + (nm && ns ? ` (${nm} multiple choice, ${ns} short answer)` : '')],
+      ['Time limit', `${dur} minute${dur === 1 ? '' : 's'}`],
+      ['Estimated time', `About ${estMinutes(list)} min`],
+      ['Layout', $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
+      ['Marking', marking.join(' · ') || 'n/a'],
+      ['Reference materials', mats ? `${mats} allowed` : 'None'],
+      ['Lockdown', $('autoSubmit').checked ? `Auto-submits after ${$('maxViol').value} violations` : 'Violations are logged'],
+      list.some((q) => q.marks != null)
+        ? ['Total marks', String(list.reduce((t, q) => t + (q.marks || 0), 0))]
+        : ['Answer key', list.some(hasKey) ? 'Hidden until you submit' : 'None: you mark your answers'],
+    ];
+    const dl = $('coverMeta');
+    dl.innerHTML = '';
+    rows.forEach(([k, v]) => dl.append(el('div', {}, el('dt', { text: k }), el('dd', { text: v }))));
+  }
 
   function beginSession(questions, minutes) {
     const now = Date.now();
@@ -1883,7 +2203,7 @@ Queue = FIFO · Stack = LIFO`;
     setupMaterialsForSession();
     hideTimeWarning();
     document.body.classList.add('locked');
-    showScreen('test');
+    setView('active-test');
     renderTest();
     updateHeader();
     tick();
@@ -1891,8 +2211,31 @@ Queue = FIFO · Stack = LIFO`;
     window.scrollTo(0, 0);
   }
 
-  function showScreen(name) {
-    ['setup', 'test', 'results'].forEach((s) => $(s).classList.toggle('hidden', s !== name));
+  // Shared setup of a multi-part exam question (stem, tables), shown with each part
+  function contextBlock(q, open) {
+    const group = (q.label || '').replace(/\([a-z]\)$/, '') || 'Question';
+    return el('details', { class: 'ctx', open: !!open },
+      el('summary', {}, `${group} setup`),
+      el('div', { class: 'ctx-text', text: q.context }));
+  }
+  // Images of the original PDF pages, so tables, formulas and diagrams read correctly
+  function pagesBlock(q) {
+    const pages = q.pages.filter((p) => state.pageImages[p - 1]);
+    if (!pages.length) return null;
+    const box = el('details', { class: 'pages-view' },
+      el('summary', {}, `View original page${pages.length > 1 ? 's' : ''} ${pages.join(', ')}`));
+    box.addEventListener('toggle', () => {
+      if (!box.open || box.dataset.loaded) return;
+      box.dataset.loaded = '1';
+      pages.forEach((p) => box.append(el('img', { src: state.pageImages[p - 1], alt: `Original exam page ${p}`, draggable: 'false', loading: 'lazy' })));
+    });
+    return box;
+  }
+  function detectDuration(text) {
+    const m = String(text || '').match(/\b(?:you\s+(?:will\s+)?have|time\s*(?:allowed|limit)?\s*[:=]|duration\s*[:=]?|allowed)\D{0,25}?(\d+(?:\.\d+)?)\s*(hours?|hrs?|minutes?|mins?)\b/i);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    return /^h/i.test(m[2]) ? Math.round(n * 60) : Math.round(n);
   }
 
   function renderTest() {
@@ -1901,7 +2244,7 @@ Queue = FIFO · Stack = LIFO`;
     const wrap = $('questionsWrap');
     wrap.innerHTML = '';
     if (state.intro && state.showIntro) {
-      wrap.append(el('details', { class: 'q-card intro-card', open: true },
+      wrap.append(el('details', { class: 'q-card intro-card' },
         el('summary', {}, 'Instructions'), el('div', { class: 'intro-text', text: state.intro })));
     }
 
@@ -1915,6 +2258,11 @@ Queue = FIFO · Stack = LIFO`;
 
     s.questions.forEach((q, qi) => {
       const card = el('section', { class: 'q-card', id: `q-${qi}`, tabindex: '-1', 'aria-labelledby': `qt-${qi}`, 'data-type': q.type });
+      const prevQ = s.questions[qi - 1];
+      if (q.label || q.marks != null) {
+        card.append(el('div', { class: 'q-meta', text: [q.label, q.marks != null ? `${q.marks} mark${q.marks === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ') }));
+      }
+      if (q.context) card.append(contextBlock(q, single || !prevQ || prevQ.context !== q.context));
       card.append(el('div', { class: 'qtext' },
         el('span', { class: 'n', text: `${qi + 1}.` }),
         el('span', { class: 'qbody', id: `qt-${qi}`, text: q.question }),
@@ -1938,6 +2286,7 @@ Queue = FIFO · Stack = LIFO`;
         });
         card.append(group);
       }
+      if (q.pages.length && state.pageImages.length) card.append(pagesBlock(q));
 
       if (single) {
         const last = qi === s.questions.length - 1;
@@ -2247,8 +2596,7 @@ Queue = FIFO · Stack = LIFO`;
     state.lastResult = { ...s, finishedAt, reason };
     reviewFilter = 'all';
     renderResults(state.lastResult);
-    showScreen('results');
-    window.scrollTo(0, 0);
+    setView('results');
   }
 
   /* ---------------------------------------------------------------
@@ -2337,6 +2685,12 @@ Queue = FIFO · Stack = LIFO`;
     const parts = [];
     if (nm) parts.push(`Multiple choice: ${count('correct', 'mcq')}/${scorableOf('mcq')} correct`);
     if (ns) parts.push(`Short answer: ${count('correct', 'short')}/${scorableOf('short')} correct`);
+    const withMarks = graded.filter((g) => g.q.marks != null);
+    if (withMarks.length) {
+      const tot = withMarks.reduce((t, g) => t + g.q.marks, 0);
+      const got = withMarks.filter((g) => g.status === 'correct').reduce((t, g) => t + g.q.marks, 0);
+      parts.push(`Marks: ${got} / ${tot} (a part marked correct earns its full marks)`);
+    }
     if (pending) parts.push(`${pending} short answer${pending === 1 ? '' : 's'} waiting for your grade (not in the score yet)`);
     $('typeSplit').textContent = parts.join(' · ');
     $('typeSplit').className = 'type-split' + (pending ? ' pending' : '');
@@ -2367,11 +2721,13 @@ Queue = FIFO · Stack = LIFO`;
       const [bcls, btxt] = badgeMap[g.status];
       const item = el('div', { class: 'review ' + g.status, 'data-status': g.status, id: `rev-${i}` });
       item.append(el('div', { class: 'row' },
-        el('b', { text: `Question ${i + 1}` }),
+        el('b', { text: g.q.label || `Question ${i + 1}` }),
+        g.q.marks != null ? el('span', { class: 'badge muted', text: `${g.q.marks} mark${g.q.marks === 1 ? '' : 's'}` }) : null,
         el('span', { class: 'badge ' + bcls, text: btxt }),
         g.how === 'self' ? el('span', { class: 'badge muted', text: 'Self-graded' }) : null,
         el('span', { class: 'spacer' }),
         el('span', { class: 'q-type', text: g.q.type === 'short' ? 'Short answer' : 'Multiple choice' })));
+      if (g.q.context) item.append(contextBlock(g.q, false));
       item.append(el('div', { class: 'qtext', text: g.q.question }));
 
       if (g.q.type === 'short') {
@@ -2406,6 +2762,7 @@ Queue = FIFO · Stack = LIFO`;
           `Your answer: ${g.a >= 0 ? LETTERS[g.a] : '-'} · Correct answer: ${g.q.answer >= 0 ? LETTERS[g.q.answer] : 'n/a'}`));
       }
       if (g.q.explanation) item.append(ansBox('Explanation', g.q.explanation, 'explain'));
+      if (g.q.pages && g.q.pages.length && state.pageImages.length) item.append(pagesBlock(g.q));
       list.append(item);
     });
     applyReviewFilter(reviewFilter);
@@ -2423,17 +2780,19 @@ Queue = FIFO · Stack = LIFO`;
     if (b) applyReviewFilter(b.dataset.f);
   });
 
-  // Retake starts straight away with the same questions and settings (this click is the
-  // user gesture fullscreen needs). If something is wrong, the setup screen shows why.
-  $('retakeBtn').addEventListener('click', () => {
-    showScreen('setup');
-    $('startBtn').click();
-    if (!state.session || state.session.submitted) { window.scrollTo(0, 0); $('startStatus').scrollIntoView({ block: 'center' }); }
-  });
-  $('newTestBtn').addEventListener('click', () => { showScreen('setup'); window.scrollTo(0, 0); });
+  // Retake and Back to menu both reset to the cover page (stage 1)
+  $('retakeBtn').addEventListener('click', () => setView('cover'));
+  $('newTestBtn').addEventListener('click', () => setView('cover'));
+  $('editTestBtn').addEventListener('click', () => setView('setup'));
 
   // Expose parsers for debugging in the console
-  window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state };
+  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
+
+  // Initial state: the cover page, with the sample test loaded so there is something to start
+  loadSample();
+  setView('cover');
+
+  window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state, setView };
 })();
 </script>
 </body>
