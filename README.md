@@ -62,5 +62,5 @@ short,Capital of France?,,,,,,Paris,Paris,
 ]
 ```
 
-To ship a built-in test with the site, replace the `SAMPLE` text in `index.html` with your own
-questions in the text format above. "Load sample test" will then load them.
+The app ships with no built-in questions: the question bank starts empty and is filled only from
+files you upload or text you paste.

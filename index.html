@@ -422,7 +422,17 @@
   <h1 id="coverTitle">Practice test</h1>
   <div id="coverIntro" class="cover-intro"></div>
 
-  <div class="card">
+  <div id="coverEmpty" class="card cover-empty hidden">
+    <h2><span class="part">Get started</span>Add your test</h2>
+    <p class="note" style="margin:0 0 14px">No test is loaded. Upload a practice test (.txt, .csv, .json or .pdf) or paste your own questions to build one. Nothing is pre-loaded.</p>
+    <div class="row">
+      <button id="emptyUpload" class="primary big">Upload a file</button>
+      <button id="emptyPaste">Paste questions</button>
+      <button id="emptyOriginal">Just view a file as-is</button>
+    </div>
+  </div>
+
+  <div id="coverCard" class="card">
     <h2><span class="part">Choose your test</span>Test mode</h2>
     <div id="modeCards" class="mode-cards" role="radiogroup" aria-label="Test mode"></div>
     <dl id="coverMeta" class="cover-meta"></dl>
@@ -457,7 +467,7 @@
     </div>
     <div class="row" style="margin-top:12px">
       <button id="parseBtn" class="primary">Parse questions</button>
-      <button id="sampleBtn">Load sample test</button>
+      <button id="uploadBtn">Upload a file</button>
       <button id="clearBtn" class="danger">Clear</button>
       <span class="spacer"></span>
     </div>
@@ -532,7 +542,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <button id="addQBtn" class="small">+ Multiple choice</button>
       <button id="addSaBtn" class="small">+ Short answer</button>
     </div>
-    <div id="editor"><div class="empty">No questions yet. Upload a file, paste text, or load the sample test.</div></div>
+    <div id="editor"><div class="empty">No questions yet. Upload a file or paste your questions above, then click Parse questions.</div></div>
   </div>
 
   <div class="card">
@@ -758,73 +768,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-
-  /* ---------------------------------------------------------------
-   * Sample test
-   * ------------------------------------------------------------- */
-  const SAMPLE = `General Knowledge Practice Quiz
-Name: ______________   Date: __________
-
-Directions: Answer every question. Multiple-choice questions have one correct option. Short-answer questions need a word or a sentence or two. You have 15 minutes.
-
-1. What is the chemical symbol for gold?
-A) Ag
-B) Au
-C) Gd
-D) Go
-Answer: B
-Explanation: Au comes from aurum, the Latin word for gold. Ag is silver.
-
-2. Which planet is known as the Red Planet?
-A) Venus
-B) Jupiter
-C) Mars
-D) Mercury
-Answer: C
-Explanation: Iron oxide (rust) in the soil gives Mars its reddish colour.
-
-3. What is the value of 7 × 8?
-A) 54  B) 56  C) 64  D) 58
-Answer: B
-Explanation: 7 × 7 = 49, plus one more 7 makes 56.
-
-4. Who wrote "Pride and Prejudice"?
-A) Charlotte Brontë
-B) Mary Shelley
-*C) Jane Austen
-D) George Eliot
-Explanation: Jane Austen published it in 1813.
-
-Page 1 of 2
-
-5. Which data structure serves items in First-In, First-Out (FIFO) order?
-A) Stack
-B) Queue
-C) Binary tree
-D) Hash map
-Answer: B
-Explanation: A queue serves items in arrival order. A stack is Last-In, First-Out.
-
-6. The mitochondria is often called the ___ of the cell.
-Type: short
-Keywords: powerhouse; power house; power plant
-Model answer: Powerhouse
-Explanation: Mitochondria make most of the cell's ATP through cellular respiration.
-
-7. At sea level, water boils at how many degrees Celsius?
-Answer: 100; one hundred
-Model answer: 100 °C
-Explanation: At 1 atmosphere of pressure, pure water boils at 100 °C.
-
-8. Name the two gases that make up most of Earth's atmosphere.
-Keywords: nitrogen; oxygen
-Match: all
-Model answer: Nitrogen (about 78%) and oxygen (about 21%).
-
-9. In one or two sentences, explain why the Moon has phases.
-Model answer: As the Moon orbits Earth, we see different amounts of its sunlit half, so the lit part seems to grow and shrink over about a month.
-Explanation: Earth's shadow is not involved. That only happens during a lunar eclipse.`;
-
 
   /* ---------------------------------------------------------------
    * Parsing
@@ -1424,8 +1367,15 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
   window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', (e) => e.preventDefault());
 
+  $('uploadBtn').addEventListener('click', () => $('fileInput').click());
+
   $('parseBtn').addEventListener('click', () => {
     const st = $('fileStatus');
+    if (!$('rawText').value.trim()) {
+      setStatus(st, 'Nothing to parse yet. Upload a file or paste your questions into the box above, then click Parse questions.', 'err');
+      $('rawText').focus();
+      return;
+    }
     try {
       const qs = parseAny($('rawText').value);
       const found = ingestQuestions(qs, 'the pasted text');
@@ -1434,18 +1384,6 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
       setStatus(st, 'Parse error: ' + err.message, 'err');
     }
   });
-  $('sampleBtn').addEventListener('click', () => loadSample());
-  function loadSample() {
-    clearOriginalFile();
-    $('rawText').value = SAMPLE;
-    const qs = parseText(SAMPLE);
-    const found = ingestQuestions(qs, 'the sample test', true);
-    if (!state.materials.some((m) => m.sample)) {
-      state.materials.push({ id: ++matSeq, name: 'Sample reference sheet', kind: 'text', text: SAMPLE_SHEET, sample: true });
-      renderMatList();
-    }
-    setStatus($('fileStatus'), `Sample test loaded: ${qs.length} questions, plus a sample reference sheet.${cleanupNote(qs, 0)}${detectedNote(found)}`, 'ok');
-  }
   $('clearBtn').addEventListener('click', () => {
     $('rawText').value = '';
     clearOriginalFile();
@@ -1471,7 +1409,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
 
   // Parses → detects embedded answers → moves them into the key and strips them from view.
   // Returns how many answers were detected.
-  // fresh = a newly loaded test (file or sample), not a re-parse of the edited text box
+  // fresh = a newly uploaded file, not a re-parse of the edited text box
   function ingestQuestions(qs, source, fresh) {
     const intro = qs.intro;
     if (fresh) state.sourceName = /\.\w{2,4}$/.test(source) ? source.replace(/\.\w{2,4}$/, '').replace(/[_-]+/g, ' ') : '';
@@ -1480,10 +1418,6 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
     const keyed = qs.filter((q) => hasKey(q) || q.explanation).length;
     if (intro) state.intro = intro;
     if (fresh) state.pageImages = [];
-    if (fresh && source !== 'the sample test' && state.materials.some((m) => m.sample)) {
-      state.materials = state.materials.filter((m) => !m.sample);
-      renderMatList();
-    }
     if (fresh && intro) { const mins = detectDuration(intro); if (mins) $('duration').value = mins; }
     else if (fresh) state.intro = '';
     if (fresh && !keyed) {
@@ -1569,7 +1503,7 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
     root.innerHTML = '';
     updateCount();
     if (!state.questions.length) {
-      root.append(el('div', { class: 'empty', text: 'No questions yet. Upload a file, paste text, or load the sample test.' }));
+      root.append(el('div', { class: 'empty', text: 'No questions yet. Upload a file or paste your questions above, then click Parse questions.' }));
       return;
     }
     if (state.intro) {
@@ -1984,14 +1918,6 @@ Explanation: Earth's shadow is not involved. That only happens during a lunar ec
     setStatus($('matStatus'), 'Note added.', 'ok');
   });
 
-  const SAMPLE_SHEET = `Allowed reference sheet (sample)
-
-Multiplication: 6 × 7 = 42 · 6 × 9 = 54 · 8 × 9 = 72
-Planets in order: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune
-Speed of light: c ≈ 3.00 × 10⁸ m/s
-Speed of sound in air: ≈ 343 m/s
-Queue = FIFO · Stack = LIFO`;
-
   // During the test
   let matActive = 0, matZoom = 1;
   function setupMaterialsForSession() {
@@ -2251,7 +2177,7 @@ Queue = FIFO · Stack = LIFO`;
       const keep = q.choices.map((c, i) => [c.trim(), i]).filter(([c]) => c !== '');
       return { ...base, choices: keep.map(([c]) => c), answer: keep.findIndex(([, i]) => i === q.answer), accepted: [], keywordMode: 'any', modelAnswer: '' };
     });
-    if (!prepared.length) return { error: 'Add at least one question first (try "Load sample test").' };
+    if (!prepared.length) return { error: 'There are no questions yet. Upload a file or paste your questions first.' };
     const bad = prepared.findIndex((q) => !q.question || (q.type === 'mcq' && q.choices.length < 2));
     if (bad !== -1) {
       return { error: prepared[bad].question
@@ -2302,6 +2228,9 @@ Queue = FIFO · Stack = LIFO`;
     });
   });
   $('coverEdit').addEventListener('click', () => setView('setup'));
+  $('emptyUpload').addEventListener('click', () => { setView('setup'); $('fileInput').click(); });
+  $('emptyPaste').addEventListener('click', () => { setView('setup'); $('rawText').focus(); });
+  $('emptyOriginal').addEventListener('click', () => { setView('original'); $('origInput').click(); });
 
   // Cover title = first line of the detected cover page / intro, else the file name
   function coverTitleAndIntro() {
@@ -2316,7 +2245,7 @@ Queue = FIFO · Stack = LIFO`;
     if (lines.length && lines[0].length <= 90 && !DIRECTIONS.test(lines[0])) {
       return { title: lines[0], intro: lines.slice(1).join('\n') };
     }
-    return { title: state.sourceName || 'Practice test', intro: lines.join('\n') };
+    return { title: state.questions.length ? (state.sourceName || 'Practice test') : 'No test loaded', intro: lines.join('\n') };
   }
 
   // ~2.5 min per mark when the test gives marks, otherwise 1 min per MCQ and 3 per short answer
@@ -2330,9 +2259,14 @@ Queue = FIFO · Stack = LIFO`;
     const ns = all.length - nm;
     const { title, intro } = coverTitleAndIntro();
     $('coverTitle').textContent = title;
-    $('coverIntro').textContent = intro || (all.length
-      ? 'Read each question carefully and answer all of them before you submit. Your answers are checked when you submit.'
-      : 'No test is loaded yet. Choose "Edit test or load another" to upload or paste one.');
+    $('coverIntro').textContent = all.length
+      ? (intro || 'Read each question carefully and answer all of them before you submit. Your answers are checked when you submit.')
+      : '';
+    // Empty question bank: ask for the user's own test. The mode cards only show once there is
+    // something to choose (questions, or a file kept as-is).
+    $('coverEmpty').classList.toggle('hidden', !!all.length);
+    $('coverCard').classList.toggle('hidden', !all.length && !state.originalFile);
+    if (!all.length && state.originalFile) state.coverChoice = 'original';
 
     const modes = [
       { v: 'mcq', t: 'Multiple choice test', n: nm, d: 'Pick one option per question. Marked as soon as you submit.' },
@@ -3040,8 +2974,8 @@ Queue = FIFO · Stack = LIFO`;
   // Expose parsers for debugging in the console
   ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
 
-  // Initial state: the cover page, with the sample test loaded so there is something to start
-  loadSample();
+  // Initial state: an empty question bank. Nothing is loaded until the user provides a file or text.
+  state.questions = [];
   setView('cover');
 
   window.__practiceTest = { parseText, parseCSV, parseJSON, parseAny, state, setView };
