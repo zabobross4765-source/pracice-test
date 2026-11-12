@@ -1388,10 +1388,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   async function handleFile(file) {
     const st = $('fileStatus');
     const ext = (file.name.split('.').pop() || '').toLowerCase();
-    setOriginalFile(file);   // the untouched upload, available as "Original file"
     state.coverChoice = 'test';
     if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
-      setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). ${file.name} is saved as-is: open it from the cover page under "Original file".`, 'err');
+      setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). To read it as-is, add it to the reference panel with + Add instead.`, 'err');
       return;
     }
     try {
@@ -1416,7 +1415,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
         renderEditor();
       }
       if (qs.length) {
-        const origNote = ' The file itself is also kept as-is in the reference panel.';
+        const origNote = '';
         setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)}${origNote} Check them below.`, 'ok');
       } else {
         setStatus(st, `Read ${file.name}, but couldn't find any questions. The extracted text is in the box below, so you can fix it and parse again.`, 'err');
