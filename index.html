@@ -630,7 +630,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <h2 style="margin:0"><span class="part">Part 4</span>Reference materials</h2>
       <span id="matCount" class="badge muted">None</span>
     </div>
-    <p class="note" style="margin:0 0 12px">Formula sheets, constants, tables or notes. They are listed under Reference documents. During a test they are locked unless you allow them in Settings.</p>
+    <p class="note" style="margin:0 0 12px">Formula sheets, constants, tables or notes. They stay open in the reference panel while you work, including during tests, unless you lock them in Settings.</p>
     <div id="matDrop" class="drop compact" tabindex="0" role="button" aria-label="Upload reference materials">
       <strong>Drop files here or click to browse</strong>
       <small>Any file: PDF, images, text, Word · several at once</small>
@@ -657,9 +657,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <label class="field"><span>Max violations before auto-submit</span><input id="maxViol" type="number" min="1" max="50" value="3"></label>
       <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
       <label class="inline"><input id="shuffle" type="checkbox"> Shuffle question order</label>
-      <label class="field"><span>Reference documents during the test</span><select id="refAccess"><option value="allowed">Open beside the test</option><option value="locked">Locked until you submit or exit</option></select></label>
-      <label class="inline"><input id="allowMat" type="checkbox" checked> When available: include reference materials</label>
-      <label class="inline"><input id="allowOrig" type="checkbox" checked> When available: include the test's own file</label>
+      <label class="inline"><input id="lockRefs" type="checkbox"> Lock reference documents during the test</label>
     </div>
     <div id="startStatus" class="status"></div>
     <div class="row" style="margin-top:8px">
@@ -1392,7 +1390,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     setOriginalFile(file);   // the untouched upload, available as "Original file"
     state.coverChoice = 'test';
-    $('allowOrig').checked = true;
     if (!['txt', 'csv', 'json', 'pdf'].includes(ext)) {
       setStatus(st, `Questions can't be made from .${ext} files (use .txt, .csv, .json or .pdf). ${file.name} is saved as-is: open it from the cover page under "Original file".`, 'err');
       return;
@@ -1419,9 +1416,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
         renderEditor();
       }
       if (qs.length) {
-        // A file that contains its answers would give them away if shown during the test
-        if (found || qs.keySection) $('allowOrig').checked = false;
-        const origNote = (found || qs.keySection) ? ' The file itself contains answers, so it is never offered during the test.' : ' The file itself is also kept as-is under Reference documents.';
+        const origNote = ' The file itself is also kept as-is in the reference panel.';
         setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)}${origNote} Check them below.`, 'ok');
       } else {
         setStatus(st, `Read ${file.name}, but couldn't find any questions. The extracted text is in the box below, so you can fix it and parse again.`, 'err');
@@ -2193,7 +2188,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   function dockContext() {
     const s = state.session;
-    if (s && !s.submitted) return { inTest: true, locked: s.refLocked, docs: s.refLocked ? [] : s.refDocs };
+    if (s && !s.submitted) return { inTest: true, locked: s.refLocked, docs: s.refLocked ? [] : state.docs };
     return { inTest: false, locked: false, docs: state.docs };
   }
   function openDock() { state.dockOpen = true; renderDock(); }
@@ -2210,7 +2205,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   function renderDock(force) {
     const ctx = dockContext();
-    const usable = !ctx.inTest || ctx.docs.length > 0;
+    const usable = !ctx.locked;
     const open = state.dockOpen && usable;
     $('dock').classList.toggle('hidden', !open);
     document.body.classList.toggle('dock-open', open);
@@ -2239,7 +2234,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     }, x.name)));
     if (!docs.length) tabs.append(el('span', { class: 'note', text: 'No files yet' }));
 
-    $('dockAdd').classList.toggle('hidden', ctx.inTest);
+    $('dockAdd').classList.remove('hidden');   // files can be added while working, tests included
     $('dockName').textContent = d ? d.name : 'Reference panel';
     $('dockInfo').textContent = d
       ? `${d.role === 'test' ? 'Test file' : d.note ? 'Note' : 'Reference'} · ${d.note ? 'Note' : KIND_LABEL[d.kind]} · ${fmtSize(d.size)} · shown as uploaded`
@@ -2300,24 +2295,16 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('matBtn').addEventListener('click', toggleDock);
 
   /* ---------- During a test ---------- */
-  function syncRefAccess() {
-    const locked = $('refAccess').value === 'locked';
-    ['allowMat', 'allowOrig'].forEach((id) => { $(id).disabled = locked; $(id).closest('label').classList.toggle('is-disabled', locked); });
-  }
-  $('refAccess').addEventListener('change', syncRefAccess);
 
   function setupReferenceForSession() {
     const s = state.session;
-    s.refLocked = $('refAccess').value === 'locked';
-    const docs = [];
-    if (state.originalFile && $('allowOrig').checked) docs.push(state.originalFile);
-    if ($('allowMat').checked) docs.push(...state.materials);
-    s.refDocs = docs;
-    s.refOpens = state.dockOpen && !s.refLocked && docs.length ? 1 : 0;
+    // Off by default: reference documents stay open while you work. Opt in under Settings.
+    s.refLocked = $('lockRefs').checked;
+    s.refDocs = state.docs;         // live list: files added during the test show up too
+    s.refOpens = state.dockOpen && !s.refLocked ? 1 : 0;
     const btn = $('matBtn');
-    btn.replaceChildren(...(s.refLocked ? [lockIcon()] : []), 'Reference panel',
-      el('span', { class: 'mat-count', text: String(s.refLocked ? state.docs.length : docs.length) }));
-    btn.classList.toggle('hidden', !(s.refLocked ? state.docs.length : docs.length));
+    btn.replaceChildren(...(s.refLocked ? [lockIcon()] : []), 'Reference panel', el('span', { class: 'mat-count', text: String(state.docs.length) }));
+    btn.classList.remove('hidden');
     btn.classList.toggle('is-locked', s.refLocked);
     btn.setAttribute('aria-disabled', s.refLocked ? 'true' : 'false');
     btn.title = s.refLocked ? 'Locked while the test is running' : 'Show or hide the reference panel';
@@ -2328,17 +2315,14 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   function testTabs(s) {
     const nav = el('nav', { class: 'mode-tabs test-tabs', 'aria-label': 'Modes (locked during the test)' });
     const locked = (label, why) => el('button', { type: 'button', class: 'mode-tab', 'aria-disabled': 'true', title: why, onclick: () => openExitModal('navigate') }, lockIcon(), label);
-    if (s.refDocs.length && !s.refLocked) {
-      nav.append(el('button', { type: 'button', class: 'mode-tab', onclick: toggleDock }, 'Reference panel'));
-    } else {
-      nav.append(locked('Reference panel', 'Locked while the test is running'));
-    }
+    if (s.refLocked) nav.append(locked('Reference panel', 'Locked while the test is running'));
+    else nav.append(el('button', { type: 'button', class: 'mode-tab' + (state.dockOpen ? ' active' : ''), 'aria-pressed': String(!!state.dockOpen), onclick: (e) => { const b = e.currentTarget; toggleDock(); b.classList.toggle('active', !!state.dockOpen); b.setAttribute('aria-pressed', String(!!state.dockOpen)); } }, 'Reference panel'));
     const names = { mcq: 'MCQ test', short: 'Short answer test', all: 'Mixed test' };
     ['mcq', 'short', 'all'].forEach((k) => {
       if (k === s.mode) nav.append(el('button', { type: 'button', class: 'mode-tab active', 'aria-current': 'page' }, names[k]));
       else if (k !== 'all') nav.append(locked(names[k], 'Finish or exit this test first'));
     });
-    nav.append(el('span', { class: 'note test-lock-note', text: s.refLocked ? 'Locked until you submit or exit the test.' : 'Other modes unlock when you submit or exit.' }));
+    nav.append(el('span', { class: 'note test-lock-note', text: s.refLocked ? 'Reference documents are locked until you submit or exit.' : 'Reference documents stay open. Other test modes unlock when you submit or exit.' }));
     return nav;
   }
 
@@ -2569,7 +2553,6 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const ns = list.length - nm;
     const selfMarked = list.filter((q) => q.type === 'short' && !q.accepted.length).length;
     const noKey = list.filter((q) => q.type === 'mcq' && q.answer < 0).length;
-    const refAllowed = ($('allowMat').checked ? state.materials.length : 0) + (state.originalFile && $('allowOrig').checked ? 1 : 0);
     const dur = parseFloat($('duration').value) || 0;
     const marking = [];
     if (list.length - selfMarked - noKey) marking.push(`${list.length - selfMarked - noKey} marked automatically`);
@@ -2581,9 +2564,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       ['Estimated time', `About ${estMinutes(list)} min`],
       ['Layout', $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
       ['Marking', marking.join(' · ') || 'n/a'],
-      ['Reference documents', !state.docs.length ? 'None'
-        : $('refAccess').value === 'locked' ? 'Locked until you submit or exit'
-        : (refAllowed ? `${refAllowed} available beside the test` : 'None allowed during the test')],
+      ['Reference documents', $('lockRefs').checked ? 'Locked until you submit or exit' : state.docs.length ? `${state.docs.length} open beside the test` : 'None yet: add them any time'],
       ['Leaving early', 'Exit test asks first; answers are not kept'],
       ['Lockdown', $('autoSubmit').checked ? `Auto-submits after ${$('maxViol').value} violations` : 'Violations are logged'],
       list.some((q) => q.marks != null)
@@ -3079,8 +3060,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const taken = r.finishedAt - r.startTime;
 
     const reasonText = { manual: 'Submitted manually', time: 'Time ran out: submitted automatically', violations: `Auto-submitted after ${r.violations.length} lockdown violations` }[r.reason];
-    const matNote = !r.refDocs || !r.refDocs.length ? ''
-      : r.refLocked ? ' · Reference documents were locked'
+    const matNote = r.refLocked ? ' · Reference documents were locked'
+      : !r.refDocs || !r.refDocs.length ? ''
       : ` · Reference documents opened ${r.refOpens} time${r.refOpens === 1 ? '' : 's'}`;
     $('resultSub').textContent = `${reasonText} · ${new Date(r.finishedAt).toLocaleString()}${matNote}`;
 
@@ -3205,9 +3186,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('editTestBtn').addEventListener('click', () => setView('setup'));
 
   // Expose parsers for debugging in the console
-  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'refAccess', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
+  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'lockRefs', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
 
-  syncRefAccess();
   // Initial state: an empty question bank, opened on the Reference documents view (the default mode).
   state.questions = [];
   setView('cover');   // the reference panel is open beside it on wide screens

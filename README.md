@@ -16,7 +16,7 @@ Exam-style PDFs are supported too: "Question 3 (Two parts; 8 marks in total): â€
 
 **Reference panel (split screen):** every screen (setup, cover page, test, results) has a reference panel docked on the right, about 45% of the width, open by default on wide screens. It holds the test file, formula sheets, notes and any file added as-is (PDF, image, text, Word), shown exactly as uploaded, and scrolls independently of the page. Hide it with **Hide â€º** and bring it back with the **Reference panel** tab on the right edge. PDFs use a built-in PDF.js viewer that works on phones too; on phones the panel opens full screen.
 
-**Test lock:** while a test runs, the other modes are locked. By default the reference panel stays open beside the test, read-only; Settings can lock it until you submit or exit. Leaving early goes through an Exit test confirmation: submit to keep your score, or exit without submitting.
+**Test lock:** while a test runs, the other modes are locked. Reference documents stay open beside the test, and you can add files mid-test. To lock them instead, tick **Lock reference documents during the test** in Settings (off by default). Leaving early goes through an Exit test confirmation: submit to keep your score, or exit without submitting.
 
 Everything runs in the browser. Uploaded files never leave your computer.
 
