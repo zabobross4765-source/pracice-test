@@ -14,7 +14,9 @@ Every test opens on a cover page (title, instructions, test mode, question count
 
 Exam-style PDFs are supported too: "Question 3 (Two parts; 8 marks in total): …" with parts "(a) (6 marks): …" become one short-answer question per part, each showing its question's setup, its marks, and an image of the original PDF page so tables and formulas stay readable. The time limit is read from the cover ("You have 3 hours").
 
-**Original file (default view):** the app opens on the Original file view, with a drop zone until a file is added. Tabs at the top switch to the MCQ test, Short answer test or Mixed test at any time (tests start from their cover page). Any uploaded file (PDF, image, text, document) is also kept exactly as uploaded. Pick **Original file** on the cover page to view it as-is with a download link, or open it from the setup screen with "Open a file as-is" without making questions from it. During a test, the **Original file** button opens it in a side-by-side pane without losing any answers. If the file contains its own answers, it's hidden during the test unless you allow it in Settings.
+**Reference documents (default view):** the app opens on a library of every file you add: the test file, formula sheets, notes, and any file opened as-is (PDF, image, text, Word). Files are shown exactly as uploaded, with download and open-in-new-tab links. PDFs use a built-in PDF.js viewer that works on phones too. Tabs at the top switch to the MCQ, Short answer or Mixed test (tests start from their cover page).
+
+**Test lock:** while a test runs, the other modes are locked. By default reference documents are locked too (Settings can make them available in a side panel instead). Leaving early goes through an Exit test confirmation: submit to keep your score, or exit without submitting.
 
 Everything runs in the browser. Uploaded files never leave your computer.
 

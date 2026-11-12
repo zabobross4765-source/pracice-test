@@ -316,28 +316,66 @@
   .q-edit .ctx { margin: 8px 0; }
   .q-edit .ctx textarea { margin-top: 8px; font-size: 13px; }
 
-  /* Original file: full view and the side-by-side pane during the test */
-  #original.wrap { max-width: 1200px; }
-  a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
-  .orig-viewer, .orig-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-  .orig-frame { width: 100%; height: 78vh; border: 1px solid var(--border); border-radius: var(--radius); background: #ffffff; }
-  .orig-body .orig-frame { height: 100%; min-height: 60vh; flex: 1; border-radius: 0; }
-  .orig-img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); background: #ffffff; }
-  .orig-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.55 var(--font-mono); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 0; max-height: 78vh; overflow: auto; }
-  .orig-panel {
+  /* Reference documents: library view, viewer, side panel during a test */
+  #original.wrap { max-width: 1280px; }
+  a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: var(--radius); padding: 8px 14px; }
+  a.btn:hover { border-color: var(--text); }
+  a.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  a.btn.small { padding: 4px 10px; font-size: 13px; }
+  .lib { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start; }
+  .lib-side { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 12px; position: sticky; top: 12px; }
+  .lib-side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .lib-side-head h2 { font-size: 15px; margin: 0; }
+  .lib-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .lib-empty { padding: 6px 4px; margin: 0; }
+  .lib-item { width: 100%; text-align: left; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px 10px; border-color: transparent; background: transparent; }
+  .lib-item:hover { background: var(--surface-2); border-color: var(--border); }
+  .lib-item.active { border-color: var(--primary); background: var(--surface-2); }
+  .lib-item .nm { font-weight: 600; overflow-wrap: anywhere; }
+  .lib-item .mt { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .lib-role { font: 600 10px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+  .lib-foot { margin: 12px 0 0; font-size: 12px; }
+  .lib-main { min-width: 0; }
+  .lib-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; margin-bottom: 12px; }
+  .lib-title { min-width: 0; }
+  .lib-title h1 { font-size: 22px; margin: 2px 0; overflow-wrap: anywhere; }
+  .lib-actions { gap: 6px; }
+  .zoom-ctl { display: inline-flex; align-items: center; gap: 4px; }
+  .doc-scroll { --zoom: 1; overflow: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; overscroll-behavior: contain; }
+  .doc-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .lib-viewer { height: min(78vh, 1100px); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: 14px; }
+  .doc-page { position: relative; flex: none; width: calc(var(--zoom) * 100%); background: #ffffff; border: 1px solid var(--border); }
+  .doc-page-n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 600 12px var(--font-mono); color: #8a8f98; }
+  .doc-page-img { display: block; width: 100%; height: auto; }
+  .doc-img { display: block; flex: none; width: calc(var(--zoom) * var(--base, 100%)); max-width: none; height: auto; border: 1px solid var(--border); background: #ffffff; }
+  .orig-text { white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.55 var(--font-mono); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin: 0; }
+  .doc-text { width: 100%; flex: none; font-size: calc(13px * var(--zoom)); }
+  .orig-drop { width: 100%; min-height: 38vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .ref-panel {
     position: fixed; top: 0; right: 0; bottom: 0; z-index: 900;
     width: min(720px, 46vw); background: var(--surface); border-left: 2px solid var(--ink);
     display: flex; flex-direction: column;
     padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px);
   }
-  .orig-panel .orig-body { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px; }
-  .orig-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* Split screen on wide screens: the test stays usable beside the file */
+  .ref-body { flex: 1; min-height: 0; padding: 12px 14px; background: var(--surface-2); }
+  .lock-ico { display: inline-flex; }
+  .lock-ico svg { width: 14px; height: 14px; }
+  #matBtn.is-locked, .mode-tab[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+  .test-tabs { margin: 0 0 14px; padding-bottom: 10px; }
+  .test-lock-note { margin: 0 0 0 4px; font-size: 13px; }
+  label.is-disabled { opacity: .55; }
+  /* Split screen on wide screens: the test stays usable beside the documents */
   @media (min-width: 1001px) {
     body.split-open #test .wrap, body.split-open .test-header .inner { margin-left: 16px; margin-right: calc(min(720px, 46vw) + 16px); }
   }
   @media (max-width: 1000px) {
-    .orig-panel { width: 100%; box-shadow: none; }
+    .ref-panel { width: 100%; }
+  }
+  @media (max-width: 800px) {
+    .lib { grid-template-columns: 1fr; }
+    .lib-side { position: static; }
+    .lib-viewer { height: 70vh; padding: 10px; }
   }
 
   /* Mode switcher (Original file / MCQ test / Short answer test / Mixed) */
@@ -404,8 +442,6 @@
   .mat-tabs { display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto; border-bottom: 1px solid var(--border); flex: none; }
   .mat-tabs button { white-space: nowrap; }
   .mat-tabs button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
-  .mat-body { flex: 1; min-height: 0; overflow: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
-  .mat-body img { max-width: none; height: auto; border: 1px solid var(--border); background: #ffffff; flex: none; }
   .mat-text { white-space: pre-wrap; line-height: 1.55; width: 100%; }
 
   @media (max-width: 560px) {
@@ -559,11 +595,11 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <h2 style="margin:0"><span class="part">Part 4</span>Reference materials</h2>
       <span id="matCount" class="badge muted">None</span>
     </div>
-    <p class="note" style="margin:0 0 12px">Formula sheets, constants, tables or notes you're allowed to use. They open in a side panel during the test without breaking lockdown.</p>
+    <p class="note" style="margin:0 0 12px">Formula sheets, constants, tables or notes. They are listed under Reference documents. During a test they are locked unless you allow them in Settings.</p>
     <div id="matDrop" class="drop compact" tabindex="0" role="button" aria-label="Upload reference materials">
       <strong>Drop files here or click to browse</strong>
-      <small>Images (.png .jpg .gif .webp .svg), .pdf, .txt, .md · several at once</small>
-      <input id="matInput" type="file" multiple accept="image/*,.pdf,.txt,.md,application/pdf,text/plain,text/markdown" hidden>
+      <small>Any file: PDF, images, text, Word · several at once</small>
+      <input id="matInput" type="file" multiple hidden>
     </div>
     <div id="matStatus" class="status"></div>
     <details style="margin-top:6px">
@@ -586,8 +622,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <label class="field"><span>Max violations before auto-submit</span><input id="maxViol" type="number" min="1" max="50" value="3"></label>
       <label class="inline"><input id="autoSubmit" type="checkbox" checked> Auto-submit at max violations</label>
       <label class="inline"><input id="shuffle" type="checkbox"> Shuffle question order</label>
-      <label class="inline"><input id="allowMat" type="checkbox" checked> Allow reference materials during the test</label>
-      <label class="inline"><input id="allowOrig" type="checkbox" checked> Allow the original file during the test</label>
+      <label class="field"><span>Reference documents during the test</span><select id="refAccess"><option value="locked">Locked until you submit or exit</option><option value="allowed">Available beside the test</option></select></label>
+      <label class="inline"><input id="allowMat" type="checkbox" checked> When available: include reference materials</label>
+      <label class="inline"><input id="allowOrig" type="checkbox" checked> When available: include the test's own file</label>
     </div>
     <div id="startStatus" class="status"></div>
     <div class="row" style="margin-top:8px">
@@ -606,8 +643,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       <div class="stat">Answered <b id="answeredCount">0/0</b></div>
       <div class="stat viol">Violations <b id="violCount">0</b><span id="violMax"></span></div>
       <span class="spacer"></span>
-      <button id="origBtn" class="hidden" aria-controls="origPanel" aria-expanded="false">Original file</button>
-      <button id="matBtn" class="hidden" aria-controls="matPanel" aria-expanded="false">Reference <span id="matBtnCount" class="mat-count">0</span></button>
+      <button id="matBtn" class="hidden" aria-controls="matPanel" aria-expanded="false">Reference documents</button>
+      <button id="exitBtn">Exit test</button>
       <button id="submitBtn" class="primary">Submit Test</button>
     </div>
     <div id="timeWarn" class="time-warn" role="status" aria-live="assertive" hidden>
@@ -628,16 +665,34 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 <!-- ===================== ORIGINAL FILE (shown as uploaded) ===================== -->
 <section id="original" class="wrap wide" aria-labelledby="origTitle">
   <nav id="tabsOriginal" class="mode-tabs" aria-label="Modes"></nav>
-  <span class="eyebrow">Original file · shown exactly as uploaded</span>
-  <h1 id="origTitle">Original file</h1>
-  <p id="origInfo" class="sub"></p>
-  <div class="row" style="margin-bottom:14px">
-    <a id="origDownload" class="btn hidden" download>Download original</a>
-    <button id="origOpen">Open a file as-is</button>
-    <button id="origBuild" class="hidden">Make a test from this file</button>
-    <input id="origInput" type="file" hidden>
+  <div class="lib">
+    <aside class="lib-side" aria-labelledby="libHead">
+      <div class="lib-side-head">
+        <h2 id="libHead">Your files</h2>
+        <button id="origOpen" class="small">+ Add files</button>
+      </div>
+      <ul id="libList" class="lib-list"></ul>
+      <p class="note lib-foot">Files stay on this device and are shown exactly as uploaded.</p>
+    </aside>
+    <div class="lib-main">
+      <div class="lib-bar">
+        <div class="lib-title">
+          <span class="eyebrow" id="origKind">Reference documents</span>
+          <h1 id="origTitle">Reference documents</h1>
+          <p id="origInfo" class="note" style="margin:0"></p>
+        </div>
+        <div class="row lib-actions">
+          <div id="libZoom"></div>
+          <a id="origDownload" class="btn small hidden" download>Download</a>
+          <a id="origNewTab" class="btn small hidden" target="_blank" rel="noopener">Open in new tab</a>
+          <button id="origBuild" class="small hidden">Make a test from this file</button>
+          <button id="origRemove" class="small danger hidden">Remove</button>
+        </div>
+      </div>
+      <div id="origViewer" class="doc-scroll lib-viewer" tabindex="0" aria-label="Document viewer"></div>
+    </div>
   </div>
-  <div id="origViewer" class="orig-viewer"></div>
+  <input id="origInput" type="file" multiple hidden>
 </section>
 
 <!-- ===================== RESULTS SCREEN ===================== -->
@@ -671,31 +726,16 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   </div>
 </section>
 
-<!-- ===================== REFERENCE PANEL ===================== -->
-<aside id="matPanel" class="mat-panel hidden" aria-label="Reference materials">
+<!-- ===================== REFERENCE DOCUMENTS SIDE PANEL (during a test, when allowed) ===================== -->
+<aside id="matPanel" class="ref-panel hidden" aria-label="Reference documents">
   <div class="mat-head">
-    <span class="eyebrow" style="margin:0">Reference</span>
+    <span class="eyebrow" style="margin:0">Reference documents</span>
     <span class="spacer"></span>
-    <div id="matZoomCtl" class="row" style="gap:4px;flex-wrap:nowrap">
-      <button id="matZoomOut" class="small" aria-label="Zoom out">−</button>
-      <span id="matZoomLabel" class="mat-zoom">100%</span>
-      <button id="matZoomIn" class="small" aria-label="Zoom in">+</button>
-    </div>
+    <div id="panelZoom"></div>
     <button id="matClose" class="small">Close</button>
   </div>
   <div id="matTabs" class="mat-tabs" role="tablist"></div>
-  <div id="matBody" class="mat-body"></div>
-</aside>
-
-<!-- ===================== ORIGINAL FILE SIDE PANE (during the test) ===================== -->
-<aside id="origPanel" class="orig-panel hidden" aria-label="Original file">
-  <div class="mat-head">
-    <span class="eyebrow" style="margin:0">Original file</span>
-    <span id="origPanelName" class="note orig-name"></span>
-    <span class="spacer"></span>
-    <button id="origClose" class="small">Close</button>
-  </div>
-  <div id="origPanelBody" class="orig-body"></div>
+  <div id="matBody" class="doc-scroll ref-body" tabindex="0" aria-label="Document viewer"></div>
 </aside>
 
 <!-- ===================== BLOCKER ===================== -->
@@ -707,6 +747,19 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     <p>Your questions are hidden. The timer is <b>still running</b>.</p>
     <p class="count" id="blockerCount"></p>
     <button id="returnBtn" class="fs-btn big">Return to Fullscreen to Continue</button>
+  </div>
+</div>
+
+<!-- ===================== EXIT TEST MODAL ===================== -->
+<div id="exitModal" class="overlay modal-bg hidden" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
+  <div class="modal">
+    <h2 id="exitTitle">Leave the test?</h2>
+    <p id="exitText"></p>
+    <div class="row" style="justify-content:flex-end">
+      <button id="exitKeep">Keep working</button>
+      <button id="exitDiscard" class="danger">Exit without submitting</button>
+      <button id="exitSubmit" class="primary">Submit &amp; see results</button>
+    </div>
   </div>
 </div>
 
@@ -1354,7 +1407,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       if (qs.length) {
         // A file that contains its answers would give them away if shown during the test
         if (found || qs.keySection) $('allowOrig').checked = false;
-        const origNote = (found || qs.keySection) ? ' The original file contains answers, so it is hidden during the test (change this in Settings).' : ' The original file can also be opened as-is beside the test.';
+        const origNote = (found || qs.keySection) ? ' The file itself contains answers, so it is never offered during the test.' : ' The file itself is also kept as-is under Reference documents.';
         setStatus(st, `Loaded ${file.name}: found ${qs.length} question${qs.length === 1 ? '' : 's'}.${cleanupNote(qs, ext === 'pdf' ? pdfHFRemoved : 0)}${detectedNote(found)}${origNote} Check them below.`, 'ok');
       } else {
         setStatus(st, `Read ${file.name}, but couldn't find any questions. The extracted text is in the box below, so you can fix it and parse again.`, 'err');
@@ -1819,22 +1872,174 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('hideAnswers').addEventListener('change', () => setHideAnswers($('hideAnswers').checked));
 
   /* ---------------------------------------------------------------
-   * Reference materials (formula sheets, notes)
+   * Reference documents: one library for every file the user adds
+   *   role 'test'      the file a test was parsed from (one at a time)
+   *   role 'reference' formula sheets, notes and any file opened as-is
+   * Each entry keeps the original File object, shown through a blob: URL.
+   * Nothing here parses, converts or changes a file.
    * ------------------------------------------------------------- */
-  state.materials = [];   // [{id, name, kind:'image'|'pages'|'text', src|pages|text}]
-  let matSeq = 0;
-  const MAX_PDF_PAGES = 30;
+  state.docs = [];            // [{ id, name, kind, file?, url?, text?, size, role, note? }]
+  state.activeDocId = null;   // file shown in the Reference documents view
+  let docSeq = 0;
+  // Older code reads these two names: the test's file and the reference files
+  Object.defineProperty(state, 'originalFile', { get: () => state.docs.find((d) => d.role === 'test') || null });
+  Object.defineProperty(state, 'materials', { get: () => state.docs.filter((d) => d.role === 'reference') });
 
-  function readAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const fr = new FileReader();
-      fr.onload = () => resolve(fr.result);
-      fr.onerror = () => reject(fr.error);
-      fr.readAsDataURL(file);
-    });
+  const MAX_PDF_PAGES = 30;   // only for the page pictures shown next to exam questions
+  const inFrame = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+  const KIND_LABEL = { pdf: 'PDF', image: 'Image', text: 'Text', other: 'File' };
+  const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>';
+  function lockIcon() { const s = el('span', { class: 'lock-ico', 'aria-hidden': 'true' }); s.innerHTML = LOCK_SVG; return s; }
+
+  function fileKind(file) {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (file.type === 'application/pdf' || ext === 'pdf') return 'pdf';
+    if (file.type.startsWith('image/')) return 'image';
+    if (file.type.startsWith('text/') || ['txt', 'csv', 'tsv', 'json', 'md', 'xml', 'log'].includes(ext)) return 'text';
+    return 'other';
+  }
+  function fmtSize(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1048576).toFixed(1)} MB`;
   }
 
-  // Render PDF pages to images so formulas, symbols and diagrams keep their layout
+  function addDoc(file, role) {
+    const d = { id: ++docSeq, name: file.name, kind: fileKind(file), file, url: URL.createObjectURL(file), size: file.size, role };
+    state.docs.push(d);
+    return d;
+  }
+  function addNote(title, text) {
+    const d = { id: ++docSeq, name: title, kind: 'text', text, size: new Blob([text]).size, role: 'reference', note: true };
+    state.docs.push(d);
+    return d;
+  }
+  function removeDoc(id) {
+    const i = state.docs.findIndex((d) => d.id === id);
+    if (i === -1) return;
+    const d = state.docs[i];
+    if (d.url) URL.revokeObjectURL(d.url);
+    if (d.noteUrl) URL.revokeObjectURL(d.noteUrl);
+    state.docs.splice(i, 1);
+  }
+  // The file a test was loaded from. A new test file replaces the previous one; reference
+  // files are never touched.
+  function setOriginalFile(file) {
+    state.docs.filter((d) => d.role === 'test' && d.file !== file).forEach((d) => removeDoc(d.id));
+    const existing = state.docs.find((d) => d.file === file);
+    if (existing) existing.role = 'test';
+    else addDoc(file, 'test');
+  }
+  function clearOriginalFile() {
+    state.docs.filter((d) => d.role === 'test').forEach((d) => removeDoc(d.id));
+  }
+  function docHref(d) {
+    if (d.url) return d.url;
+    if (!d.noteUrl) d.noteUrl = URL.createObjectURL(new Blob([d.text], { type: 'text/plain' }));
+    return d.noteUrl;
+  }
+  const docDownloadName = (d) => (d.note ? `${d.name}.txt` : d.name);
+
+  /* ---------- Viewer: PDFs drawn with PDF.js (works on phones too), images, text ---------- */
+  const pdfCache = new WeakMap();   // File -> Promise<PDF document>
+  function loadPdf(file) {
+    if (!pdfCache.has(file)) pdfCache.set(file, file.arrayBuffer().then((buf) => pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise));
+    return pdfCache.get(file);
+  }
+  function clearViewer(box) {
+    if (box._io) { box._io.disconnect(); box._io = null; }
+    (box._urls || []).forEach((u) => URL.revokeObjectURL(u));
+    box._urls = [];
+    box.innerHTML = '';
+    box.scrollTop = 0;
+  }
+  // Renders a document into a scrollable box (class "doc-scroll"). `locked`: during a test.
+  async function renderDoc(box, d, { locked = false } = {}) {
+    clearViewer(box);
+    const token = (box._token = (box._token || 0) + 1);   // ignore results of an older render
+    box.style.setProperty('--zoom', 1);
+    if (d.kind === 'pdf') return mountPdf(box, d, token);
+    if (d.kind === 'image') {
+      const img = el('img', { class: 'doc-img', src: d.url, alt: d.name, draggable: 'false' });
+      img.addEventListener('load', () => {
+        // Small images keep their natural size (zoom scales from there); big ones fit the width
+        const room = box.clientWidth - 30;
+        img.style.setProperty('--base', img.naturalWidth < room ? img.naturalWidth + 'px' : '100%');
+      });
+      box.append(img);
+      return;
+    }
+    if (d.kind === 'text') {
+      const pre = el('pre', { class: 'orig-text doc-text' });
+      pre.textContent = d.text != null ? d.text : await d.file.text();   // shown verbatim
+      if (box._token === token) box.append(pre);
+      return;
+    }
+    const ext = (d.name.split('.').pop() || 'this').toUpperCase();
+    box.append(el('div', { class: 'empty' }, `Browsers can't display ${ext} files directly.`,
+      locked ? ' It will be available to download after the test.' : ' Use Download to open it in another app.'));
+  }
+  async function mountPdf(box, d, token) {
+    if (!window.pdfjsLib) { box.append(el('p', { class: 'note', text: 'The PDF viewer could not load. Check your internet connection and reload the page.' })); return; }
+    const status = el('p', { class: 'note', style: 'margin:0', text: 'Opening PDF…' });
+    box.append(status);
+    let pdf, ratio = 1.294;
+    try {
+      pdf = await loadPdf(d.file);
+      const vp = (await pdf.getPage(1)).getViewport({ scale: 1 });
+      ratio = vp.height / vp.width;
+    } catch (err) {
+      if (box._token === token) status.textContent = `This PDF couldn't be opened (${err.message}). Download it to view it in another app.`;
+      return;
+    }
+    if (box._token !== token) return;
+    status.remove();
+    // Pages are drawn only when scrolled near, so long PDFs open quickly
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      io.unobserve(en.target);
+      drawPage(pdf, en.target, box, token);
+    }), { root: box, rootMargin: '900px 0px' });
+    box._io = io;
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const ph = el('div', { class: 'doc-page', 'data-page': i, style: `aspect-ratio: 1 / ${ratio}` }, el('span', { class: 'doc-page-n', text: `Page ${i}` }));
+      box.append(ph);
+      io.observe(ph);
+    }
+  }
+  async function drawPage(pdf, ph, box, token) {
+    try {
+      const n = +ph.dataset.page;
+      const page = await pdf.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      const vp = page.getViewport({ scale: Math.min(3, 1400 / base.width) });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', 0.9));
+      if (box._token !== token || !blob) return;
+      const url = URL.createObjectURL(blob);
+      box._urls.push(url);
+      ph.style.aspectRatio = `${vp.width} / ${vp.height}`;
+      ph.replaceChildren(el('img', { class: 'doc-page-img', src: url, alt: `Page ${n}`, draggable: 'false' }));
+    } catch (err) {
+      ph.replaceChildren(el('span', { class: 'doc-page-n', text: `Page ${ph.dataset.page} couldn't be drawn` }));
+    }
+  }
+  function zoomControl(box) {
+    let z = 1;
+    const label = el('span', { class: 'mat-zoom', text: '100%' });
+    const set = (v) => { z = Math.max(0.5, Math.min(3, v)); box.style.setProperty('--zoom', z); label.textContent = Math.round(z * 100) + '%'; };
+    return el('div', { class: 'zoom-ctl', role: 'group', 'aria-label': 'Zoom' },
+      el('button', { type: 'button', class: 'small', 'aria-label': 'Zoom out', onclick: () => set(z - 0.25) }, '−'),
+      label,
+      el('button', { type: 'button', class: 'small', 'aria-label': 'Zoom in', onclick: () => set(z + 0.25) }, '+'),
+      el('button', { type: 'button', class: 'small', onclick: () => set(1) }, 'Fit'));
+  }
+
+  // Page pictures for exam questions ("View original page 3"); unrelated to the library
   async function renderPdfPages(file, onProgress) {
     if (!window.pdfjsLib) throw new Error('PDF.js failed to load (check your internet connection).');
     const buf = await readAsArrayBuffer(file);
@@ -1855,59 +2060,33 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     return { pages, truncated: pdf.numPages > n };
   }
 
-  function matKindLabel(m) {
-    if (m.kind === 'pages') return `PDF · ${m.pages.length} page${m.pages.length === 1 ? '' : 's'}${m.truncated ? ` (first ${MAX_PDF_PAGES})` : ''}`;
-    return m.kind === 'image' ? 'Image' : 'Text note';
-  }
-
+  /* ---------- Setup screen, Part 4: reference materials list ---------- */
   function renderMatList() {
     const list = $('matList');
     list.innerHTML = '';
-    const n = state.materials.length;
+    const refs = state.materials;
+    const n = refs.length;
     $('matCount').textContent = n ? `${n} item${n === 1 ? '' : 's'}` : 'None';
     $('matCount').className = 'badge ' + (n ? 'good' : 'muted');
-    state.materials.forEach((m, i) => {
-      const thumb = m.kind === 'text'
-        ? el('div', { class: 'mat-thumb txt', text: 'Aa' })
-        : el('img', { class: 'mat-thumb', src: m.kind === 'image' ? m.src : m.pages[0], alt: '' });
-      const name = el('input', { type: 'text', id: `mat-name-${m.id}`, 'aria-label': 'Material name' });
-      name.value = m.name;
-      name.addEventListener('input', () => { m.name = name.value; });
+    refs.forEach((d) => {
+      const thumb = d.kind === 'image'
+        ? el('img', { class: 'mat-thumb', src: d.url, alt: '' })
+        : el('div', { class: 'mat-thumb txt', text: d.note ? 'Aa' : (d.name.split('.').pop() || '').slice(0, 4).toUpperCase() });
+      const name = el('input', { type: 'text', id: `mat-name-${d.id}`, 'aria-label': 'Document name' });
+      name.value = d.name;
+      name.addEventListener('input', () => { d.name = name.value; });
       list.append(el('li', { class: 'mat-item' }, thumb,
-        el('div', { class: 'mat-meta' }, name, el('span', { class: 'note', text: matKindLabel(m) })),
-        el('button', { class: 'small danger', onclick: () => { state.materials.splice(i, 1); renderMatList(); } }, 'Remove')));
+        el('div', { class: 'mat-meta' }, name, el('span', { class: 'note', text: `${d.note ? 'Note' : KIND_LABEL[d.kind]} · ${fmtSize(d.size)}` })),
+        el('button', { class: 'small danger', onclick: () => { removeDoc(d.id); renderMatList(); } }, 'Remove')));
     });
   }
 
-  async function addMaterialFiles(files) {
-    const st = $('matStatus');
-    const problems = [];
-    let added = 0;
-    for (const file of files) {
-      const ext = (file.name.split('.').pop() || '').toLowerCase();
-      const base = file.name.replace(/\.[^.]+$/, '') || file.name;
-      try {
-        if (file.type.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext)) {
-          setStatus(st, `Adding ${file.name}…`);
-          state.materials.push({ id: ++matSeq, name: base, kind: 'image', src: await readAsDataURL(file) });
-        } else if (ext === 'pdf') {
-          const { pages, truncated } = await renderPdfPages(file, (p, n) => setStatus(st, `Rendering ${file.name}: page ${p}/${n}…`));
-          state.materials.push({ id: ++matSeq, name: base, kind: 'pages', pages, truncated });
-        } else if (['txt', 'md'].includes(ext) || file.type.startsWith('text/')) {
-          state.materials.push({ id: ++matSeq, name: base, kind: 'text', text: await readAsText(file) });
-        } else {
-          problems.push(`${file.name} (use an image, PDF, .txt or .md)`);
-          continue;
-        }
-        added++;
-      } catch (err) {
-        console.error(err);
-        problems.push(`${file.name} (${err.message})`);
-      }
-    }
+  // Adds files to the library exactly as they are. Returns the new entries.
+  function addMaterialFiles(files) {
+    const added = files.map((file) => addDoc(file, 'reference'));
     renderMatList();
-    if (problems.length) setStatus(st, `${added ? `Added ${added}. ` : ''}Couldn't add: ${problems.join(', ')}.`, 'err');
-    else if (added) setStatus(st, `Added ${added} item${added === 1 ? '' : 's'}. They'll be available in the test's Reference panel.`, 'ok');
+    if (added.length) setStatus($('matStatus'), `Added ${added.length} file${added.length === 1 ? '' : 's'}. ${added.length === 1 ? 'It is' : 'They are'} under Reference documents.`, 'ok');
+    return added;
   }
 
   const matDrop = $('matDrop'), matInput = $('matInput');
@@ -1921,67 +2100,11 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('matNoteAdd').addEventListener('click', () => {
     const text = $('matNoteText').value.trim();
     if (!text) { setStatus($('matStatus'), 'Type or paste some text for the note first.', 'err'); return; }
-    state.materials.push({ id: ++matSeq, name: $('matNoteTitle').value.trim() || 'Notes', kind: 'text', text });
+    addNote($('matNoteTitle').value.trim() || 'Notes', text);
     $('matNoteText').value = ''; $('matNoteTitle').value = '';
     renderMatList();
-    setStatus($('matStatus'), 'Note added.', 'ok');
+    setStatus($('matStatus'), 'Note added. It is under Reference documents.', 'ok');
   });
-
-  // During the test
-  let matActive = 0, matZoom = 1;
-  function setupMaterialsForSession() {
-    const s = state.session;
-    s.materials = $('allowMat').checked ? state.materials.slice() : [];
-    s.matOpens = 0;
-    $('matBtn').classList.toggle('hidden', !s.materials.length);
-    $('matBtnCount').textContent = s.materials.length;
-    matActive = 0; matZoom = 1;
-    closeMatPanel();
-  }
-  function openMatPanel() {
-    const s = state.session;
-    if (!s || !s.materials || !s.materials.length) return;
-    closeOrigPanel();
-    s.matOpens++;
-    renderMatPanel();
-    $('matPanel').classList.remove('hidden');
-    $('matBtn').setAttribute('aria-expanded', 'true');
-    $('matClose').focus();
-  }
-  function closeMatPanel() {
-    $('matPanel').classList.add('hidden');
-    $('matBtn').setAttribute('aria-expanded', 'false');
-  }
-  function applyMatZoom() {
-    $('matZoomLabel').textContent = Math.round(matZoom * 100) + '%';
-    $('matBody').querySelectorAll('img').forEach((img) => { img.style.width = matZoom * 100 + '%'; });
-  }
-  function renderMatPanel() {
-    const s = state.session;
-    const tabs = $('matTabs');
-    tabs.innerHTML = '';
-    tabs.classList.toggle('hidden', s.materials.length < 2);
-    s.materials.forEach((m, i) => tabs.append(el('button', {
-      class: 'small' + (i === matActive ? ' active' : ''), role: 'tab', 'aria-selected': i === matActive ? 'true' : 'false',
-      onclick: () => { matActive = i; matZoom = 1; renderMatPanel(); },
-    }, m.name || `Item ${i + 1}`)));
-    const m = s.materials[matActive];
-    const body = $('matBody');
-    body.innerHTML = '';
-    body.scrollTop = 0;
-    $('matZoomCtl').classList.toggle('hidden', m.kind === 'text');
-    if (m.kind === 'text') {
-      body.append(el('div', { class: 'mat-text', text: m.text }));
-    } else {
-      const srcs = m.kind === 'image' ? [m.src] : m.pages;
-      srcs.forEach((src, pi) => body.append(el('img', { src, draggable: 'false', alt: m.kind === 'pages' ? `${m.name}, page ${pi + 1}` : m.name })));
-    }
-    applyMatZoom();
-  }
-  $('matBtn').addEventListener('click', () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()));
-  $('matClose').addEventListener('click', closeMatPanel);
-  $('matZoomIn').addEventListener('click', () => { matZoom = Math.min(3, matZoom + 0.25); applyMatZoom(); });
-  $('matZoomOut').addEventListener('click', () => { matZoom = Math.max(0.5, matZoom - 0.25); applyMatZoom(); });
 
   /* ---------------------------------------------------------------
    * Lockdown: fullscreen helpers
@@ -2014,109 +2137,23 @@ JSON: {"type":"short","question":"...","keywords":["..."],
    * Start test
    * ------------------------------------------------------------- */
   /* ---------------------------------------------------------------
-   * Original file: the uploaded file kept exactly as it is (the File object
-   * itself, shown through a blob: URL). Nothing here parses or changes it.
+   * Reference documents view (the default view), mode tabs, the side
+   * panel during a test, and the test lock / Exit test confirmation.
    * ------------------------------------------------------------- */
-  state.originalFile = null;    // { file, name, type, size, kind, url }
   state.coverChoice = 'test';   // 'test' or 'original' (cover page mode cards)
-  const inFrame = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
 
-  function fileKind(file) {
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    if (file.type === 'application/pdf' || ext === 'pdf') return 'pdf';
-    if (file.type.startsWith('image/')) return 'image';
-    if (file.type.startsWith('text/') || ['txt', 'csv', 'tsv', 'json', 'md', 'xml', 'log'].includes(ext)) return 'text';
-    return 'other';
-  }
-  const KIND_LABEL = { pdf: 'PDF', image: 'Image', text: 'Text file', other: 'File' };
-  function fmtSize(n) {
-    if (n < 1024) return `${n} B`;
-    if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`;
-    return `${(n / 1048576).toFixed(1)} MB`;
-  }
-
-  function setOriginalFile(file) {
-    clearOriginalFile();
-    state.originalFile = { file, name: file.name, type: file.type, size: file.size, kind: fileKind(file), url: URL.createObjectURL(file) };
-  }
-  function clearOriginalFile() {
-    if (state.originalFile) URL.revokeObjectURL(state.originalFile.url);
-    state.originalFile = null;
-  }
-
-  // Renders the original into a container. `locked` = during the test (no download,
-  // PDF viewer toolbar hidden where the browser supports it).
-  async function renderOriginal(container, locked) {
-    container.innerHTML = '';
-    const f = state.originalFile;
-    if (!f) {
-      if (locked) { container.append(el('div', { class: 'empty', text: 'No original file.' })); return; }
-      const dz = el('div', { class: 'drop orig-drop', tabindex: '0', role: 'button', 'aria-label': 'Open a file as-is' },
-        el('strong', { text: 'Drop a file here or click to browse' }),
-        el('small', { text: 'Any file (PDF, image, Word, text). Shown exactly as it is, with no questions made from it.' }));
-      dz.addEventListener('click', () => $('origInput').click());
-      dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('origInput').click(); } });
-      ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
-      ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
-      dz.addEventListener('drop', (e) => {
-        const file = e.dataTransfer.files[0];
-        if (file) { setOriginalFile(file); renderOriginalView(); }   // stored as-is, never parsed
-      });
-      container.append(dz, el('p', { class: 'note', style: 'margin:0' }, 'Want a test instead? ',
-        el('button', { class: 'small', onclick: () => { setView('setup'); $('fileInput').click(); } }, 'Upload a test file'), ' ',
-        el('button', { class: 'small', onclick: () => { setView('setup'); $('rawText').focus(); } }, 'Paste questions')));
-      return;
-    }
-    if (f.kind === 'pdf') {
-      if (inFrame) {
-        // Inside an embedded page (like a claude.ai artifact) browsers won't show nested PDFs
-        container.append(el('p', { class: 'note', style: 'margin:0' }, 'Showing the pages as pictures because this page is embedded. The file itself is unchanged.'));
-        await showPdfPages(container, f);
-        return;
-      }
-      container.append(
-        el('iframe', { class: 'orig-frame', src: f.url + (locked ? '#toolbar=0&navpanes=0' : ''), title: `${f.name} (original PDF)` }),
-        el('p', { class: 'note', style: 'margin:0' }, 'Shown in your browser\'s own PDF viewer. ',
-          el('button', { class: 'small', onclick: () => { container.innerHTML = ''; showPdfPages(container, f); } }, 'Pages not showing? View them as pictures')));
-    } else if (f.kind === 'image') {
-      container.append(el('img', { class: 'orig-img', src: f.url, alt: f.name, draggable: 'false' }));
-    } else if (f.kind === 'text') {
-      const pre = el('pre', { class: 'orig-text' });
-      pre.textContent = await f.file.text();   // shown verbatim, never parsed
-      container.append(pre);
-    } else {
-      container.append(el('div', { class: 'empty' },
-        `Your browser can't display ${f.name.split('.').pop().toUpperCase()} files directly.`,
-        locked ? null : ' Use "Download original" to open it in another app.'));
-    }
-  }
-
-  // Draws each PDF page to an image for display only (the stored file is not modified)
-  async function showPdfPages(container, f) {
-    const status = el('p', { class: 'note', style: 'margin:0', text: 'Drawing pages…' });
-    container.append(status);
-    try {
-      const { pages, truncated } = await renderPdfPages(f.file, (p, n) => { status.textContent = `Drawing page ${p} of ${n}…`; });
-      status.remove();
-      pages.forEach((src, i) => container.append(el('img', { class: 'orig-img', src, alt: `${f.name}, page ${i + 1}`, draggable: 'false', loading: 'lazy' })));
-      if (truncated) container.append(el('p', { class: 'note', text: `Showing the first ${MAX_PDF_PAGES} pages.` }));
-    } catch (err) {
-      status.textContent = `Couldn't draw the pages: ${err.message}`;
-    }
-  }
-
-  // Mode switcher shown on the Original file view and the cover page
+  // Mode switcher shown on the Reference documents view and the cover page
   function renderModeTabs(id, active) {
     const nav = $(id);
     nav.innerHTML = '';
     const nm = state.questions.filter((q) => q.type === 'mcq').length;
     const ns = state.questions.length - nm;
-    const tabs = [['original', 'Original file', null], ['mcq', 'MCQ test', nm], ['short', 'Short answer test', ns]];
+    const tabs = [['original', 'Reference documents', state.docs.length], ['mcq', 'MCQ test', nm], ['short', 'Short answer test', ns]];
     if (nm && ns) tabs.push(['all', 'Mixed test', nm + ns]);
     tabs.forEach(([k, label, n]) => nav.append(el('button', {
       type: 'button', class: 'mode-tab' + (k === active ? ' active' : ''), 'aria-current': k === active ? 'page' : null,
       onclick: () => switchMode(k),
-    }, label, n == null ? null : el('span', { class: 'tab-n', text: String(n), 'aria-label': `${n} questions` }))));
+    }, label, el('span', { class: 'tab-n', text: String(n), 'aria-label': k === 'original' ? `${n} files` : `${n} questions` }))));
     nav.append(el('span', { class: 'spacer' }), el('button', { type: 'button', class: 'mode-tab', onclick: () => setView('setup') }, 'Edit or load tests'));
   }
   // Test modes go through the cover page (stage 1) before any questions are shown
@@ -2127,71 +2164,203 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     setView('cover');
   }
 
-  // Full-page "Original file" view (the default mode)
+  // Full-page Reference documents view: file list on the side, viewer beside it
   function renderOriginalView() {
-    const f = state.originalFile;
-    $('origTitle').textContent = f ? f.name : 'Original file';
     renderModeTabs('tabsOriginal', 'original');
-    $('origInfo').textContent = f
-      ? `${KIND_LABEL[f.kind]} · ${fmtSize(f.size)} · shown as uploaded, no questions made from it`
-      : 'Open any file to view it exactly as it is. Switch to a test mode above whenever you are ready.';
+    const docs = state.docs;
+    if (!docs.some((d) => d.id === state.activeDocId)) state.activeDocId = docs.length ? (state.originalFile || docs[0]).id : null;
+    const d = docs.find((x) => x.id === state.activeDocId) || null;
+
+    const list = $('libList');
+    list.innerHTML = '';
+    if (!docs.length) list.append(el('li', { class: 'note lib-empty', text: 'No files yet.' }));
+    [...docs.filter((x) => x.role === 'test'), ...docs.filter((x) => x.role !== 'test')].forEach((x) => list.append(el('li', {},
+      el('button', {
+        type: 'button', class: 'lib-item' + (x === d ? ' active' : ''), 'aria-current': x === d ? 'true' : null,
+        onclick: () => { state.activeDocId = x.id; renderOriginalView(); $('origViewer').focus({ preventScroll: true }); },
+      },
+      el('span', { class: 'lib-role', text: x.role === 'test' ? 'Test file' : x.note ? 'Note' : 'Reference' }),
+      el('span', { class: 'nm', text: x.name }),
+      el('span', { class: 'mt', text: `${x.note ? 'Note' : KIND_LABEL[x.kind]} · ${fmtSize(x.size)}` })))));
+
+    $('origKind').textContent = d ? (d.role === 'test' ? 'Test file · shown exactly as uploaded' : 'Reference document · shown exactly as uploaded') : 'Reference documents';
+    $('origTitle').textContent = d ? d.name : 'Reference documents';
+    $('origInfo').textContent = d
+      ? `${d.note ? 'Note' : KIND_LABEL[d.kind]} · ${fmtSize(d.size)}`
+      : 'Add your test file, formula sheets or notes to read them here. Switch to a test mode above when you are ready.';
+    // Embedded pages (e.g. a claude.ai artifact) can't download or open new tabs, so those links only show on the real site
     const dl = $('origDownload');
-    // Embedded pages (e.g. a claude.ai artifact) can't start downloads, so the link only shows on the real site
-    dl.classList.toggle('hidden', !f || inFrame);
-    if (f) { dl.href = f.url; dl.setAttribute('download', f.name); }
-    $('origBuild').classList.toggle('hidden', !f || !['txt', 'csv', 'json', 'pdf'].includes(f.name.split('.').pop().toLowerCase()));
-    $('origOpen').textContent = 'Open a different file as-is';
-    $('origOpen').classList.toggle('hidden', !f);
-    renderOriginal($('origViewer'), false);
+    dl.classList.toggle('hidden', !d || inFrame);
+    if (d) { dl.href = docHref(d); dl.setAttribute('download', docDownloadName(d)); }
+    const nt = $('origNewTab');
+    nt.classList.toggle('hidden', !d || inFrame || !d.url || d.kind === 'other');
+    if (d && d.url) nt.href = d.url;
+    $('origBuild').classList.toggle('hidden', !d || !d.file || d.role === 'test' || !['txt', 'csv', 'json', 'pdf'].includes(d.name.split('.').pop().toLowerCase()));
+    $('origRemove').classList.toggle('hidden', !d);
+    $('libZoom').replaceChildren(d && d.kind !== 'other' ? zoomControl($('origViewer')) : '');
+
+    const viewer = $('origViewer');
+    if (d) { renderDoc(viewer, d); return; }
+    clearViewer(viewer);
+    const dz = el('div', { class: 'drop orig-drop', tabindex: '0', role: 'button', 'aria-label': 'Add files' },
+      el('strong', { text: 'Drop files here or click to browse' }),
+      el('small', { text: 'Any file (PDF, image, Word, text). Shown exactly as it is, with no questions made from it.' }));
+    dz.addEventListener('click', () => $('origInput').click());
+    dz.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('origInput').click(); } });
+    ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
+    dz.addEventListener('drop', (e) => { if (e.dataTransfer.files.length) addToLibrary([...e.dataTransfer.files]); });
+    viewer.append(dz, el('p', { class: 'note', style: 'margin:0' }, 'Want a test instead? ',
+      el('button', { class: 'small', onclick: () => { setView('setup'); $('fileInput').click(); } }, 'Upload a test file'), ' ',
+      el('button', { class: 'small', onclick: () => { setView('setup'); $('rawText').focus(); } }, 'Paste questions')));
+  }
+  function addToLibrary(files) {
+    const added = addMaterialFiles(files);   // stored as-is: no parsing, no questions
+    if (added.length) state.activeDocId = added[0].id;
+    renderOriginalView();
   }
   $('origOpen').addEventListener('click', () => $('origInput').click());
   $('origInput').addEventListener('change', () => {
-    const file = $('origInput').files[0];
+    const files = [...$('origInput').files];
     $('origInput').value = '';
-    if (!file) return;
-    setOriginalFile(file);           // stored only: no parsing, no questions
+    if (files.length) addToLibrary(files);
+  });
+  $('origRemove').addEventListener('click', () => {
+    if (state.activeDocId == null) return;
+    removeDoc(state.activeDocId);
+    state.activeDocId = null;
+    renderMatList();
     renderOriginalView();
   });
   $('origBuild').addEventListener('click', async () => {
-    const f = state.originalFile;
-    if (!f) return;
+    const d = state.docs.find((x) => x.id === state.activeDocId);
+    if (!d || !d.file) return;
     setView('setup');
-    await handleFile(f.file);        // the same parser as a normal upload, only when asked
+    await handleFile(d.file);        // the same parser as a normal upload, only when asked
   });
 
-  // Side pane during the test: rendered once per test, then only shown/hidden, so the
-  // viewer keeps its place and the test keeps all answers.
-  function setupOriginalForSession() {
-    const s = state.session;
-    s.origAllowed = !!state.originalFile && $('allowOrig').checked;
-    s.origRendered = false;
-    s.origOpens = 0;
-    $('origBtn').classList.toggle('hidden', !s.origAllowed);
-    $('origPanelBody').innerHTML = '';
-    closeOrigPanel();
+  /* ---------- During a test: side panel + lock ---------- */
+  function syncRefAccess() {
+    const locked = $('refAccess').value === 'locked';
+    ['allowMat', 'allowOrig'].forEach((id) => { $(id).disabled = locked; $(id).closest('label').classList.toggle('is-disabled', locked); });
   }
-  function openOrigPanel() {
+  $('refAccess').addEventListener('change', syncRefAccess);
+
+  function setupReferenceForSession() {
     const s = state.session;
-    if (!s || !s.origAllowed) return;
+    s.refLocked = $('refAccess').value === 'locked';
+    const docs = [];
+    if (state.originalFile && $('allowOrig').checked) docs.push(state.originalFile);
+    if ($('allowMat').checked) docs.push(...state.materials);
+    s.refDocs = s.refLocked ? state.docs.slice() : docs;   // locked: shown as locked, never opened
+    s.refActive = 0;
+    s.refShown = null;
+    s.refOpens = 0;
+    const btn = $('matBtn');
+    btn.replaceChildren(...(s.refLocked ? [lockIcon()] : []), 'Reference documents',
+      el('span', { class: 'mat-count', text: String(s.refDocs.length) }));
+    btn.classList.toggle('hidden', !s.refDocs.length);
+    btn.classList.toggle('is-locked', s.refLocked);
+    btn.setAttribute('aria-disabled', s.refLocked ? 'true' : 'false');
+    btn.title = s.refLocked ? 'Locked while the test is running' : '';
+    clearViewer($('matBody'));
     closeMatPanel();
-    if (!s.origRendered) { renderOriginal($('origPanelBody'), true); s.origRendered = true; }
-    s.origOpens++;
-    $('origPanelName').textContent = state.originalFile.name;
-    $('origPanel').classList.remove('hidden');
+  }
+  function openMatPanel() {
+    const s = state.session;
+    if (!s || !s.refDocs || !s.refDocs.length) return;
+    if (s.refLocked) { openExitModal('reference'); return; }
+    s.refOpens++;
+    renderRefPanel();
+    $('matPanel').classList.remove('hidden');
     document.body.classList.add('split-open');
-    $('origBtn').setAttribute('aria-expanded', 'true');
-    $('origClose').focus();
+    $('matBtn').setAttribute('aria-expanded', 'true');
+    $('matClose').focus();
   }
-  function closeOrigPanel() {
-    $('origPanel').classList.add('hidden');
+  function closeMatPanel() {
+    $('matPanel').classList.add('hidden');
     document.body.classList.remove('split-open');
-    $('origBtn').setAttribute('aria-expanded', 'false');
+    $('matBtn').setAttribute('aria-expanded', 'false');
   }
-  $('origBtn').addEventListener('click', () => ($('origPanel').classList.contains('hidden') ? openOrigPanel() : closeOrigPanel()));
-  $('origClose').addEventListener('click', closeOrigPanel);
+  // The open document is only re-drawn when another one is picked, so it keeps its place
+  function renderRefPanel() {
+    const s = state.session;
+    const tabs = $('matTabs');
+    tabs.innerHTML = '';
+    tabs.classList.toggle('hidden', s.refDocs.length < 2);
+    s.refDocs.forEach((d, i) => tabs.append(el('button', {
+      type: 'button', class: 'small' + (i === s.refActive ? ' active' : ''), role: 'tab', 'aria-selected': i === s.refActive ? 'true' : 'false',
+      onclick: () => { s.refActive = i; renderRefPanel(); },
+    }, d.name)));
+    const d = s.refDocs[s.refActive];
+    if (s.refShown !== d.id) {
+      s.refShown = d.id;
+      $('panelZoom').replaceChildren(d.kind !== 'other' ? zoomControl($('matBody')) : '');
+      renderDoc($('matBody'), d, { locked: true });
+    }
+  }
+  $('matBtn').addEventListener('click', () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()));
+  $('matClose').addEventListener('click', closeMatPanel);
+
+  // Locked tab strip at the top of the test: shows what is unavailable and why
+  function testTabs(s) {
+    const nav = el('nav', { class: 'mode-tabs test-tabs', 'aria-label': 'Modes (locked during the test)' });
+    const locked = (label, why) => el('button', { type: 'button', class: 'mode-tab', 'aria-disabled': 'true', title: why, onclick: () => openExitModal('navigate') }, lockIcon(), label);
+    if (s.refDocs.length && !s.refLocked) {
+      nav.append(el('button', { type: 'button', class: 'mode-tab', onclick: () => ($('matPanel').classList.contains('hidden') ? openMatPanel() : closeMatPanel()) }, 'Reference documents'));
+    } else {
+      nav.append(locked('Reference documents', 'Locked while the test is running'));
+    }
+    const names = { mcq: 'MCQ test', short: 'Short answer test', all: 'Mixed test' };
+    ['mcq', 'short', 'all'].forEach((k) => {
+      if (k === s.mode) nav.append(el('button', { type: 'button', class: 'mode-tab active', 'aria-current': 'page' }, names[k]));
+      else if (k !== 'all') nav.append(locked(names[k], 'Finish or exit this test first'));
+    });
+    nav.append(el('span', { class: 'note test-lock-note', text: s.refLocked ? 'Locked until you submit or exit the test.' : 'Other modes unlock when you submit or exit.' }));
+    return nav;
+  }
+
+  // Leaving a running test always asks first
+  function openExitModal(reason) {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    const why = {
+      reference: 'Reference documents are locked while the test is running.',
+      navigate: 'Other modes are locked while the test is running.',
+      exit: 'You can go back to your reference documents once you leave the test.',
+    }[reason];
+    $('exitText').textContent = `${why} Submit to keep your score, or exit without submitting (your answers will not be kept). The timer keeps running while you decide.`;
+    $('exitModal').classList.remove('hidden');
+    $('exitKeep').focus();
+  }
+  function closeExitModal() { $('exitModal').classList.add('hidden'); }
+  // Ends the test without grading it and returns to the Reference documents view
+  function exitTest() {
+    const s = state.session;
+    if (!s || s.submitted) return;
+    s.submitted = true;
+    s.locked = false;
+    clearInterval(s.timerId);
+    hideBlocker();
+    closeMatPanel();
+    hideTimeWarning();
+    closeExitModal();
+    $('confirmModal').classList.add('hidden');
+    document.body.classList.remove('locked');
+    unlockKeyboard();
+    exitFs();
+    state.session = null;
+    setView('original');
+  }
+  $('exitBtn').addEventListener('click', () => openExitModal('exit'));
+  $('exitKeep').addEventListener('click', closeExitModal);
+  $('exitDiscard').addEventListener('click', exitTest);
+  $('exitSubmit').addEventListener('click', () => { closeExitModal(); submitTest('manual'); });
 
   /* ---------------------------------------------------------------
-   * Stage flow:  'cover'  ->  'active-test'  ->  'results'  ->  'cover'
+   * Stage flow:  'original' (default)  ->  'cover'  ->  'active-test'  ->  'results'
+   * While 'active-test' runs, setView() refuses every other view: leaving goes through
+   * Submit or the Exit test confirmation.
    * ('setup' is the separate authoring screen for loading and editing tests.)
    * setView() is the only thing that switches screens. Questions are only rendered
    * by beginSession(), which only the cover page's Start Test button calls.
@@ -2200,6 +2369,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   state.view = 'original';   // default mode on load and on Back to menu
 
   function setView(view) {
+    if (state.session && !state.session.submitted && view !== 'active-test') { openExitModal('navigate'); return; }
     // The test screen can't be shown without a session started from the cover page
     if (view === 'active-test' && !(state.session && !state.session.submitted)) view = 'cover';
     if (view === 'results' && !state.lastResult) view = 'cover';
@@ -2208,7 +2378,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     // Questions exist in the page only during an active test
     if (view !== 'active-test') $('questionsWrap').innerHTML = '';
     if (view === 'cover') { renderCover(); renderModeTabs('tabsCover', state.coverChoice === 'original' ? 'original' : $('testMode').value); }
-    if (view === 'original') { renderOriginalView(); renderModeTabs('tabsOriginal', 'original'); }
+    if (view === 'original') renderOriginalView();
     window.scrollTo(0, 0);
   }
 
@@ -2319,9 +2489,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       { v: 'short', t: 'Short answer test', n: ns, d: 'Type a word or a few sentences. Keyword-marked, or you mark it against a model answer.' },
     ];
     if (nm && ns) modes.unshift({ v: 'all', t: 'Mixed test', n: all.length, d: 'Every question, both types.' });
-    const of = state.originalFile;
-    modes.push({ v: 'original', t: 'Original file', n: 1, label: of ? `${KIND_LABEL[of.kind]} · ${fmtSize(of.size)}` : 'No file yet',
-      d: of ? `${of.name}, shown exactly as uploaded. No questions, no timer.` : 'Open any file and view it as-is, without making questions from it.' });
+    const nd = state.docs.length;
+    modes.push({ v: 'original', t: 'Reference documents', n: 1, label: nd ? `${nd} file${nd === 1 ? '' : 's'}` : 'No files yet',
+      d: nd ? 'Read your files exactly as uploaded. No questions, no timer.' : 'Add files and read them as-is, without making questions from them.' });
     const testModes = modes.filter((m) => m.v !== 'original');
     let mode = $('testMode').value;
     // Keep the mode the user picked; only move off it when another mode actually has questions
@@ -2366,10 +2536,8 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   function renderCoverMeta() {
     if (state.coverChoice === 'original') {
-      const f = state.originalFile;
-      const rows = f
-        ? [['File', f.name], ['Type', KIND_LABEL[f.kind]], ['Size', fmtSize(f.size)]]
-        : [['File', 'None yet'], ['Opens as', 'Exactly as uploaded'], ['Questions', 'None made from it']];
+      const nd = state.docs.length;
+      const rows = [['Files', nd ? String(nd) : 'None yet'], ['Opens as', 'Exactly as uploaded'], ['Questions', 'None made from them']];
       const dl = $('coverMeta');
       dl.innerHTML = '';
       rows.forEach(([k, v]) => dl.append(el('div', {}, el('dt', { text: k }), el('dd', { text: v }))));
@@ -2381,7 +2549,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const ns = list.length - nm;
     const selfMarked = list.filter((q) => q.type === 'short' && !q.accepted.length).length;
     const noKey = list.filter((q) => q.type === 'mcq' && q.answer < 0).length;
-    const mats = $('allowMat').checked ? state.materials.length : 0;
+    const refAllowed = ($('allowMat').checked ? state.materials.length : 0) + (state.originalFile && $('allowOrig').checked ? 1 : 0);
     const dur = parseFloat($('duration').value) || 0;
     const marking = [];
     if (list.length - selfMarked - noKey) marking.push(`${list.length - selfMarked - noKey} marked automatically`);
@@ -2393,8 +2561,10 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       ['Estimated time', `About ${estMinutes(list)} min`],
       ['Layout', $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
       ['Marking', marking.join(' · ') || 'n/a'],
-      ['Reference materials', mats ? `${mats} allowed` : 'None'],
-      ['Original file', state.originalFile ? ($('allowOrig').checked ? 'Can be opened beside the test' : 'Hidden during the test') : 'None'],
+      ['Reference documents', !state.docs.length ? 'None'
+        : $('refAccess').value === 'locked' ? 'Locked until you submit or exit'
+        : (refAllowed ? `${refAllowed} available beside the test` : 'None allowed during the test')],
+      ['Leaving early', 'Exit test asks first; answers are not kept'],
       ['Lockdown', $('autoSubmit').checked ? `Auto-submits after ${$('maxViol').value} violations` : 'Violations are logged'],
       list.some((q) => q.marks != null)
         ? ['Total marks', String(list.reduce((t, q) => t + (q.marks || 0), 0))]
@@ -2424,9 +2594,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       blockerShown: false,
       timerId: null,
       submitted: false,
+      mode: $('testMode').value,
     };
-    setupMaterialsForSession();
-    setupOriginalForSession();
+    setupReferenceForSession();
     hideTimeWarning();
     document.body.classList.add('locked');
     setView('active-test');
@@ -2469,6 +2639,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const single = s.layout === 'single';
     const wrap = $('questionsWrap');
     wrap.innerHTML = '';
+    wrap.append(testTabs(s));
     if (state.intro && state.showIntro) {
       wrap.append(el('details', { class: 'q-card intro-card' },
         el('summary', {}, 'Instructions'), el('div', { class: 'intro-text', text: state.intro })));
@@ -2567,8 +2738,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   document.addEventListener('keydown', (e) => {
     const s = state.session;
     if (!s || s.submitted || s.layout !== 'single' || $('test').classList.contains('hidden')) return;
-    if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('matPanel').classList.contains('hidden')) return;
-    if (e.target && e.target.closest && e.target.closest('#origPanel')) return;
+    if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('exitModal').classList.contains('hidden') || !$('matPanel').classList.contains('hidden')) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t && (t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || (t.tagName === 'INPUT' && t.type !== 'radio'))) return;
@@ -2745,13 +2915,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
   // Clicked outside the browser / Alt+Tab / another window took focus
   window.addEventListener('blur', () => {
-    // Clicking into the original file's embedded PDF viewer moves focus into that frame,
-    // which the browser reports as a blur. That is not leaving the test.
-    setTimeout(() => {
-      const a = document.activeElement;
-      if (a && a.tagName === 'IFRAME' && a.closest('#origPanel')) return;
-      addViolation('Browser window lost focus');
-    }, 0);
+    addViolation('Browser window lost focus');
   });
 
   /* ---------------------------------------------------------------
@@ -2784,7 +2948,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       return;
     }
     // Esc is captured when Keyboard Lock is active (Chromium); swallow it.
-    if (k === 'escape') { e.preventDefault(); closeMatPanel(); closeOrigPanel(); }
+    if (k === 'escape') { e.preventDefault(); if (!$('exitModal').classList.contains('hidden')) closeExitModal(); else closeMatPanel(); }
   }, true);
 
   window.addEventListener('beforeunload', (e) => {
@@ -2819,7 +2983,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
 
     hideBlocker();
     closeMatPanel();
-    closeOrigPanel();
+    closeExitModal();
     hideTimeWarning();
     $('confirmModal').classList.add('hidden');
     document.body.classList.remove('locked');
@@ -2895,8 +3059,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const taken = r.finishedAt - r.startTime;
 
     const reasonText = { manual: 'Submitted manually', time: 'Time ran out: submitted automatically', violations: `Auto-submitted after ${r.violations.length} lockdown violations` }[r.reason];
-    const matNote = (r.materials && r.materials.length ? ` · Reference panel opened ${r.matOpens} time${r.matOpens === 1 ? '' : 's'}` : '')
-      + (r.origAllowed ? ` · Original file opened ${r.origOpens} time${r.origOpens === 1 ? '' : 's'}` : '');
+    const matNote = !r.refDocs || !r.refDocs.length ? ''
+      : r.refLocked ? ' · Reference documents were locked'
+      : ` · Reference documents opened ${r.refOpens} time${r.refOpens === 1 ? '' : 's'}`;
     $('resultSub').textContent = `${reasonText} · ${new Date(r.finishedAt).toLocaleString()}${matNote}`;
 
     const hero = $('scoreHero');
@@ -3020,9 +3185,10 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('editTestBtn').addEventListener('click', () => setView('setup'));
 
   // Expose parsers for debugging in the console
-  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
+  ['duration', 'layoutMode', 'autoSubmit', 'maxViol', 'refAccess', 'allowMat', 'allowOrig', 'testMode'].forEach((id) => $(id).addEventListener('change', () => { if (state.view === 'cover') renderCover(); }));
 
-  // Initial state: an empty question bank, opened on the Original file view (the default mode).
+  syncRefAccess();
+  // Initial state: an empty question bank, opened on the Reference documents view (the default mode).
   state.questions = [];
   setView('original');
 
