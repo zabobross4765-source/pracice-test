@@ -413,6 +413,34 @@
     .dock { width: 100%; }
   }
 
+  /* Questions shown as the original PDF */
+  .format-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
+  .format-row button.active { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+  #coverFormat { margin: 16px 0 0; }
+  .fmt-btn { flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 10px 14px; flex: 1 1 220px; }
+  .fmt-btn span { font-weight: 400; font-size: 13px; color: var(--muted); }
+  .fmt-btn.active span { color: inherit; opacity: .85; }
+  .pdf-split { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 14px; align-items: start; }
+  .pdf-pane { position: sticky; top: calc(var(--hdr, 64px) + 8px); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .pdf-pane b { overflow-wrap: anywhere; }
+  .pdf-q-viewer { height: calc(100vh - var(--hdr, 64px) - 70px); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); padding: 10px; }
+  .answer-sheet { display: grid; gap: 10px; min-width: 0; }
+  .as-top { display: grid; gap: 8px; }
+  .as-top h2 { margin: 0; }
+  .as-item { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 12px 14px; scroll-margin-top: calc(var(--hdr, 64px) + 12px); }
+  .as-item:focus { outline: none; }
+  .as-item:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .as-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .as-n { font: 600 14px var(--font-mono); color: var(--ink); }
+  .as-q { font-size: 13px; color: var(--muted); margin: 6px 0 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .as-item .opt { padding: 6px 8px; }
+  .as-item .sa-input { min-height: 80px; }
+  /* Narrow main area (phone, or reference panel open): PDF on top, answer sheet below */
+  @media (max-width: 1100px) { .pdf-split { grid-template-columns: 1fr; } .pdf-pane { position: static; } .pdf-q-viewer { height: 65vh; } }
+  body.dock-open .pdf-split { grid-template-columns: 1fr; }
+  body.dock-open .pdf-pane { position: static; }
+  body.dock-open .pdf-q-viewer { height: 65vh; }
+
   /* Mode switcher (Original file / MCQ test / Short answer test / Mixed) */
   .mode-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
   .mode-tab { padding: 7px 12px; font-size: 14px; }
@@ -515,6 +543,7 @@
   <div id="coverCard" class="card">
     <h2><span class="part">Choose your test</span>Test mode</h2>
     <div id="modeCards" class="mode-cards" role="radiogroup" aria-label="Test mode"></div>
+    <div id="coverFormat" class="format-row hidden" role="group" aria-label="Show the questions as"></div>
     <dl id="coverMeta" class="cover-meta"></dl>
     <p class="note" style="margin:14px 0 0">The test opens in fullscreen lockdown. Leaving fullscreen, switching tabs or clicking outside the window is logged as a violation.</p>
     <div id="coverStatus" class="status"></div>
@@ -1392,6 +1421,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     const st = $('fileStatus');
     // Remembered (not added to the panel) so it can be opened as-is with View test file
     state.lastTestFile = file;
+    state.questionFormat = null;   // a new PDF test shows its pages by default
     $('viewTestBtn').classList.remove('hidden');
     const ext = (file.name.split('.').pop() || '').toLowerCase();
     state.coverChoice = 'test';
@@ -2546,7 +2576,21 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   $('coverViewFile').addEventListener('click', () => { if (state.lastTestFile) viewFileInPanel(state.lastTestFile); });
   $('viewOnlyBtn').addEventListener('click', () => { openDock(); $('origInput').click(); });
 
+  function renderCoverFormat() {
+    const box = $('coverFormat');
+    const isPdf = !!state.lastTestFile && fileKind(state.lastTestFile) === 'pdf' && state.questions.length > 0;
+    box.classList.toggle('hidden', !isPdf);
+    if (!isPdf) return;
+    const cur = state.questionFormat === 'web' ? 'web' : 'pdf';
+    const btn = (v, label, hint) => el('button', { type: 'button', class: 'fmt-btn' + (cur === v ? ' active' : ''), 'aria-pressed': String(cur === v),
+      onclick: () => { state.questionFormat = v; renderCoverFormat(); renderCoverMeta(); } }, el('b', { text: label }), el('span', { text: hint }));
+    box.replaceChildren(el('span', { class: 'note', text: 'Show the questions as' }),
+      btn('pdf', 'Original PDF', 'The exam pages exactly as uploaded, with an answer sheet'),
+      btn('web', 'Website layout', 'Each question as a separate card'));
+  }
+
   function updateCoverStart() {
+    renderCoverFormat();
     const b = $('coverStart');
     $('coverViewFile').classList.toggle('hidden', !state.lastTestFile);
     if (state.coverChoice === 'original') {
@@ -2582,7 +2626,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       ['Questions', `${list.length}` + (nm && ns ? ` (${nm} multiple choice, ${ns} short answer)` : '')],
       ['Time limit', `${dur} minute${dur === 1 ? '' : 's'}`],
       ['Estimated time', `About ${estMinutes(list)} min`],
-      ['Layout', $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
+      ['Layout', state.lastTestFile && fileKind(state.lastTestFile) === 'pdf' && state.questionFormat !== 'web' ? 'Original PDF with an answer sheet' : $('layoutMode').value === 'single' ? 'One question at a time' : 'All questions on one page'],
       ['Marking', marking.join(' · ') || 'n/a'],
       ['Reference documents', $('lockRefs').checked ? 'Locked until you submit or exit' : state.docs.length ? `${state.docs.length} open beside the test` : 'None yet: add them any time'],
       ['Leaving early', 'Exit test asks first; answers are not kept'],
@@ -2616,6 +2660,9 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       timerId: null,
       submitted: false,
       mode: $('testMode').value,
+      // Tests loaded from a PDF can show the PDF itself as the questions
+      pdfFile: state.lastTestFile && fileKind(state.lastTestFile) === 'pdf' ? state.lastTestFile : null,
+      format: state.lastTestFile && fileKind(state.lastTestFile) === 'pdf' && state.questionFormat !== 'web' ? 'pdf' : 'web',
     };
     setupReferenceForSession();
     hideTimeWarning();
@@ -2655,12 +2702,81 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     return /^h/i.test(m[2]) ? Math.round(n * 60) : Math.round(n);
   }
 
+  // Answer input for one question, filled with whatever was answered before
+  function answerControl(q, qi, s, labelledBy) {
+    if (q.type === 'short') {
+      const ta = el('textarea', { id: `ans-${qi}`, class: 'sa-input', rows: 4, autocomplete: 'off', spellcheck: 'false', placeholder: 'Type your answer…', 'aria-labelledby': labelledBy });
+      ta.value = s.answers[qi] || '';
+      ta.addEventListener('input', () => { s.answers[qi] = ta.value; updateHeader(); });
+      return [el('label', { class: 'sa-label', for: `ans-${qi}`, text: 'Your answer' }), ta];
+    }
+    const group = el('div', { role: 'radiogroup', 'aria-labelledby': labelledBy });
+    q.choices.forEach((c, ci) => {
+      const input = el('input', { type: 'radio', name: `ans-${qi}`, value: ci });
+      const label = el('label', { class: 'opt' }, input, el('span', { class: 'l', text: LETTERS[ci] }), el('span', { text: c }));
+      if (s.answers[qi] === ci) { input.checked = true; label.classList.add('sel'); }
+      input.addEventListener('change', () => {
+        s.answers[qi] = ci;
+        group.querySelectorAll('.opt').forEach((o, i) => o.classList.toggle('sel', i === ci));
+        updateHeader();
+      });
+      group.append(label);
+    });
+    return [group];
+  }
+
+  // "Questions as: Original PDF | Website layout" (only for tests loaded from a PDF)
+  function formatSwitch(s) {
+    if (!s.pdfFile) return null;
+    const btn = (v, label) => el('button', { type: 'button', class: 'small' + (s.format === v ? ' active' : ''), 'aria-pressed': String(s.format === v),
+      onclick: () => { if (s.format === v) return; s.format = state.questionFormat = v; renderTest(); updateHeader(); window.scrollTo(0, 0); } }, label);
+    return el('div', { class: 'format-row', role: 'group', 'aria-label': 'Show the questions as' },
+      el('span', { class: 'note', text: 'Questions as:' }), btn('pdf', 'Original PDF'), btn('web', 'Website layout'));
+  }
+
+  // PDF format: the test's own pages, with an answer sheet beside them
+  function renderPdfFormat(s, wrap) {
+    const viewer = el('div', { class: 'doc-scroll pdf-q-viewer', tabindex: '0', 'aria-label': `${s.pdfFile.name}: test questions` });
+    const toPage = (p) => {
+      const pg = viewer.querySelector(`[data-page="${p}"]`);
+      if (pg) viewer.scrollTop = pg.offsetTop - viewer.offsetTop - 8;
+    };
+    const pal = el('div', { class: 'palette', role: 'navigation', 'aria-label': 'Question navigator' });
+    s.questions.forEach((q, qi) => pal.append(el('button', { type: 'button', class: 'pal-btn', id: `pal-${qi}`, onclick: () => { goTo(qi, true); if (q.pages[0]) toPage(q.pages[0]); } }, String(qi + 1))));
+    const sheet = el('div', { class: 'answer-sheet', 'aria-label': 'Answer sheet' },
+      el('div', { class: 'as-top' }, el('h2', { text: 'Answer sheet' }), pal));
+    s.questions.forEach((q, qi) => {
+      const meta = [q.label || `Question ${qi + 1}`, q.marks != null ? `${q.marks} mark${q.marks === 1 ? '' : 's'}` : '', q.type === 'short' ? 'Short answer' : 'Multiple choice'].filter(Boolean).join(' · ');
+      sheet.append(el('section', { class: 'as-item', id: `q-${qi}`, tabindex: '-1', 'aria-labelledby': `qt-${qi}`, 'data-type': q.type },
+        el('div', { class: 'as-head' },
+          el('span', { class: 'as-n', text: `${qi + 1}.` }),
+          el('span', { class: 'q-meta', id: `qt-${qi}`, style: 'margin:0', text: meta }),
+          el('span', { class: 'spacer' }),
+          q.pages[0] ? el('button', { type: 'button', class: 'small', onclick: () => toPage(q.pages[0]) }, `Page ${q.pages[0]}`) : null),
+        el('p', { class: 'as-q', title: q.question, text: q.question }),
+        ...answerControl(q, qi, s, `qt-${qi}`)));
+    });
+    wrap.append(el('div', { class: 'pdf-split' },
+      el('div', { class: 'pdf-pane' }, el('div', { class: 'row', style: 'justify-content:space-between' }, el('b', { text: s.pdfFile.name }), zoomControl(viewer)), viewer),
+      sheet));
+    renderDoc(viewer, { kind: 'pdf', file: s.pdfFile, name: s.pdfFile.name }, { locked: true });
+    $('submitBtnBottom').parentElement.hidden = false;
+  }
+  // Keep the PDF pane just below the sticky header, whatever height the header wraps to
+  new ResizeObserver(() => {
+    const h = document.querySelector('.test-header');
+    if (h && h.offsetHeight) document.documentElement.style.setProperty('--hdr', h.offsetHeight + 'px');
+  }).observe(document.querySelector('.test-header'));
+
   function renderTest() {
     const s = state.session;
-    const single = s.layout === 'single';
+    const single = s.layout === 'single' && s.format !== 'pdf';
     const wrap = $('questionsWrap');
     wrap.innerHTML = '';
     wrap.append(testTabs(s));
+    const fs = formatSwitch(s);
+    if (fs) wrap.append(fs);
+    if (s.format === 'pdf') { renderPdfFormat(s, wrap); return; }
     if (state.intro && state.showIntro) {
       wrap.append(el('details', { class: 'q-card intro-card' },
         el('summary', {}, 'Instructions'), el('div', { class: 'intro-text', text: state.intro })));
@@ -2686,24 +2802,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
         el('span', { class: 'qbody', id: `qt-${qi}`, text: q.question }),
         el('span', { class: 'q-type', text: q.type === 'short' ? 'Short answer' : 'Multiple choice' })));
 
-      if (q.type === 'short') {
-        const ta = el('textarea', { id: `ans-${qi}`, class: 'sa-input', rows: 4, autocomplete: 'off', spellcheck: 'false', placeholder: 'Type your answer…' });
-        ta.addEventListener('input', () => { s.answers[qi] = ta.value; updateHeader(); });
-        card.append(el('label', { class: 'sa-label', for: `ans-${qi}`, text: 'Your answer' }), ta);
-      } else {
-        const group = el('div', { role: 'radiogroup', 'aria-labelledby': `qt-${qi}` });
-        q.choices.forEach((c, ci) => {
-          const input = el('input', { type: 'radio', name: `ans-${qi}`, value: ci });
-          const label = el('label', { class: 'opt' }, input, el('span', { class: 'l', text: LETTERS[ci] }), el('span', { text: c }));
-          input.addEventListener('change', () => {
-            s.answers[qi] = ci;
-            group.querySelectorAll('.opt').forEach((o, i) => o.classList.toggle('sel', i === ci));
-            updateHeader();
-          });
-          group.append(label);
-        });
-        card.append(group);
-      }
+      card.append(...answerControl(q, qi, s, `qt-${qi}`));
       if (q.pages.length && state.pageImages.length) card.append(pagesBlock(q));
 
       if (single) {
@@ -2728,7 +2827,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
     i = Math.max(0, Math.min(s.questions.length - 1, i));
     s.current = i;
     const card = $(`q-${i}`);
-    if (s.layout === 'single') {
+    if (s.layout === 'single' && s.format !== 'pdf') {
       s.questions.forEach((_, qi) => { $(`q-${qi}`).hidden = qi !== i; });
       window.scrollTo(0, 0);
       if (focus) card.focus();
@@ -2747,7 +2846,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
       const b = $(`pal-${qi}`);
       if (!b) return;
       const ans = isAnswered(s, qi);
-      const cur = s.layout === 'single' && qi === s.current;
+      const cur = s.layout === 'single' && s.format !== 'pdf' && qi === s.current;
       b.classList.toggle('answered', ans);
       b.classList.toggle('current', cur);
       if (cur) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
@@ -2758,7 +2857,7 @@ JSON: {"type":"short","question":"...","keywords":["..."],
   // Keyboard navigation for the one-question-at-a-time layout
   document.addEventListener('keydown', (e) => {
     const s = state.session;
-    if (!s || s.submitted || s.layout !== 'single' || $('test').classList.contains('hidden')) return;
+    if (!s || s.submitted || s.layout !== 'single' || s.format === 'pdf' || $('test').classList.contains('hidden')) return;
     if (s.blockerShown || !$('confirmModal').classList.contains('hidden') || !$('exitModal').classList.contains('hidden')) return;
     if (e.target && e.target.closest && e.target.closest('#dock')) return;   // keys in the panel stay with the panel
     if (e.ctrlKey || e.metaKey || e.altKey) return;

@@ -14,6 +14,8 @@ Every test opens on a cover page (title, instructions, test mode, question count
 
 Exam-style PDFs are supported too: "Question 3 (Two parts; 8 marks in total): …" with parts "(a) (6 marks): …" become one short-answer question per part, each showing its question's setup, its marks, and an image of the original PDF page so tables and formulas stay readable. The time limit is read from the cover ("You have 3 hours").
 
+**Questions as the original PDF:** a test loaded from a PDF can be taken with the PDF itself as the question paper. The cover page offers *Original PDF* (default for PDF tests) or *Website layout*; in PDF mode the exam pages scroll in their own viewer beside an answer sheet, each answer has a *Page N* button that jumps to its page, and a toggle switches formats mid-test without losing answers.
+
 **Reference panel (split screen):** every screen (setup, cover page, test, results) has a reference panel docked on the right, about 45% of the width, open by default on wide screens. It holds the test file, formula sheets, notes and any file added as-is (PDF, image, text, Word), shown exactly as uploaded, and scrolls independently of the page. Hide it with **Hide ›** and bring it back with the **Reference panel** tab on the right edge. PDFs use a built-in PDF.js viewer that works on phones too; on phones the panel opens full screen.
 
 **Test lock:** while a test runs, the other modes are locked. Reference documents stay open beside the test, and you can add files mid-test. To lock them instead, tick **Lock reference documents during the test** in Settings (off by default). Leaving early goes through an Exit test confirmation: submit to keep your score, or exit without submitting.
